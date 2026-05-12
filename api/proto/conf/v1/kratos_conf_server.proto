@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package conf.v1;
+
+import "google/protobuf/duration.proto";
+import "conf/v1/kratos_conf_middleware.proto";
+
+option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
+
+// 服务器
+message Server {
+  // REST
+  message HTTP {
+    message CORS {
+      repeated string headers = 1;
+      repeated string methods = 2;
+      repeated string origins = 3;
+    }
+
+    string network = 1; // 网络
+    string addr = 2; // 服务监听地址
+    google.protobuf.Duration timeout = 3; // 超时时间
+    CORS cors = 4; // 跨域配置
+    Middleware middleware = 5; // 中间件
+    bool enable_swagger = 6; // 启用SwaggerUI
+    bool enable_pprof = 7; // 启用pprof
+  }
+
+  // gPRC
+  message GRPC {
+    string network = 1; // 网络
+    string addr = 2; // 服务监听地址
+    google.protobuf.Duration timeout = 3; // 超时时间
+    Middleware middleware = 4;
+    TLS tls = 5; // TLS配置
+    int32 max_msg_size = 6; // 最大消息大小（MB）
+  }
+
+  message TLS {
+    bool enable = 1;
+    string cert_file = 2; // 证书文件
+    string key_file = 3; // 私钥文件
+    string ca_file = 4; // CA证书文件
+  }
+
+  // RabbitMQ
+  message RabbitMQ {
+    repeated string endpoints = 1; // 对端网络地址
+  }
+
+  // RPC
+
+  HTTP http = 1; // HTTP服务
+  GRPC grpc = 2; // gRPC服务
+
+  //  Message Queue
+
+  RabbitMQ rabbitmq = 10; // RabbitMQ服务
+}

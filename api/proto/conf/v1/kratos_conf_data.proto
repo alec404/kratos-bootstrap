@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package conf.v1;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
+
+// 数据
+message Data {
+  // 数据库
+  message Database {
+    string driver = 1;  // 驱动名：mysql、postgresql、mongodb、sqlite……
+    string source = 2;  // 数据源（DSN字符串）
+
+    bool migrate = 10; // 数据迁移开关
+    bool debug = 11; // 调试开关
+    bool enable_trace = 12; // 链路追踪开关
+    bool enable_metrics = 13; // 性能分析开关
+
+    int32 max_idle_connections = 20; // 连接池最大空闲连接数
+    int32 max_open_connections = 21; // 连接池最大打开连接数
+    google.protobuf.Duration connection_max_lifetime = 22; // 连接可重用的最大时间长度
+
+    // 从库配置
+    message Replica {
+      string source = 1;  // 从库数据源（DSN字符串）
+      int32 max_idle_connections = 2; // 连接池最大空闲连接数
+      int32 max_open_connections = 3; // 连接池最大打开连接数
+      google.protobuf.Duration connection_max_lifetime = 4; // 连接可重用的最大时间长度
+    }
+
+    repeated Replica replicas = 30; // 从库列表
+  }
+
+  // redis
+  message Redis {
+    string network = 1; // 网络
+    string addr = 2;  // 服务端地址
+    string password = 3;  // 密码
+    int32 db = 4; // 数据库索引
+
+    google.protobuf.Duration dial_timeout = 5;  // 连接超时时间
+    google.protobuf.Duration read_timeout = 6;  // 读取超时时间
+    google.protobuf.Duration write_timeout = 7; // 写入超时时间
+
+    bool enable_tracing = 8; // 打开链路追踪
+    bool enable_metrics = 9; // 打开性能度量
+  }
+
+  message ElasticSearch {
+    repeated string addresses = 1;
+    string username = 2;
+    string password = 3;
+    bool enable_sniffer = 4;
+    bool enable_gzip = 5;
+    bool debug = 6; // 调试开关
+    bool enable_health = 7; // 检查检查
+    google.protobuf.Duration health_check_interval = 8;
+  }
+
+  // RabbitMQ
+  message RabbitMQ {
+    repeated string endpoints = 1;  // 对端网络地址
+  }
+
+  Database database = 1;  // 数据库DSN
+  Redis redis = 2;  // Redis
+  ElasticSearch elasticsearch = 3;  // ElasticSearch数据库
+
+  // Message Queue
+
+  optional RabbitMQ rabbitmq = 10;  // RabbitMQ服务
+}

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package conf.v1;
+
+option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
+
+// 日志
+message Logger {
+  // Zap
+  message Zap {
+    bool enable_console = 1;
+    bool enable_file = 2;
+    bool enable_error_file = 3;
+    string filename = 4;
+    string error_filename = 5;
+    string level = 6;
+    int32 max_size = 7;
+    int32 max_age = 8;
+    int32 max_backups = 9;
+    bool enable_compress = 10;
+  }
+
+  string type = 1;
+  Zap zap = 2;
+}

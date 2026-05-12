@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package conf.v1;
+
+import "google/protobuf/duration.proto";
+import "conf/v1/kratos_conf_middleware.proto";
+
+option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
+
+// 客户端
+message Client {
+  // HTTP
+  message HTTP {
+    google.protobuf.Duration timeout = 1; // 超时时间
+    Middleware middleware = 2;
+    string addr = 3; // 服务地址
+  }
+
+  // gPRC
+  message GRPC {
+    google.protobuf.Duration timeout = 1; // 超时时间
+    Middleware middleware = 2;
+    string addr = 3; // 服务地址
+    TLS tls = 4; // TLS配置
+    int32 max_msg_size = 5; // 最大消息大小（MB）
+  }
+
+  message TLS {
+    bool enable = 1;
+    string cert_file = 2; // 证书文件
+    string key_file = 3; // 私钥文件
+    string ca_file = 4; // CA证书文件
+    string server_name = 5; // 服务名，客户端有用
+  }
+
+
+  HTTP http = 1; // HTTP服务
+  GRPC grpc = 2; // gRPC服务
+}

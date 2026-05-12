@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package conf.v1;
+
+import "conf/v1/kratos_conf_tracer.proto";
+import "conf/v1/kratos_conf_data.proto";
+import "conf/v1/kratos_conf_server.proto";
+import "conf/v1/kratos_conf_client.proto";
+import "conf/v1/kratos_conf_logger.proto";
+import "conf/v1/kratos_conf_notify.proto";
+import "conf/v1/kratos_conf_metrics.proto";
+
+option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
+
+// 引导信息
+message Bootstrap {
+  Server server = 1;
+  Client client = 2;
+  Data data = 3;
+  Tracer trace = 4;
+  Logger logger = 5;
+  Notification notify = 9;
+  Metrics metrics = 10;
+}

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package conf.v1;
+
+option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
+
+// 通知消息
+message Notification {
+  // 钉钉
+  message DingTalk {
+    repeated string tokens = 1;
+  }
+  bool enable = 1;
+  DingTalk ding_talk = 2;
+}

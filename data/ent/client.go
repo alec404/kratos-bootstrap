@@ -1,0 +1,54 @@
+package ent
+
+import (
+	"entgo.io/ent/dialect/sql"
+
+	"github.com/go-kratos/kratos/v2/log"
+
+	conf "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1"
+
+	entCrud "github.com/alec404/go-crud/entgo"
+)
+
+// DbCreator 定义创建Ent ORM数据库客户端的函数类型
+type DbCreator[T entCrud.EntClientInterface] func(drv *sql.Driver) T
+
+// NewEntClient 创建Ent ORM数据库客户端
+func NewEntClient[T entCrud.EntClientInterface](cfg *conf.Bootstrap, dbCreator DbCreator[T]) *entCrud.EntClient[T] {
+	if cfg.Data == nil || cfg.Data.Database == nil {
+		log.Warn("database config is nil")
+		return nil
+	}
+
+	if dbCreator == nil {
+		log.Warn("dbCreator is nil")
+		return nil
+	}
+
+	drv, err := entCrud.CreateDriver(
+		cfg.Data.Database.GetDriver(),
+		cfg.Data.Database.GetSource(),
+		cfg.Data.Database.GetEnableTrace(),
+		cfg.Data.Database.GetEnableMetrics(),
+	)
+	if err != nil {
+		log.Fatalf("failed opening connection to db: %v", err)
+		return nil
+	}
+
+	db := dbCreator(drv)
+
+	wrapperClient := entCrud.NewEntClient(db, drv)
+	if wrapperClient == nil {
+		log.Fatalf("failed creating ent client")
+		return nil
+	}
+
+	wrapperClient.SetConnectionOption(
+		int(cfg.Data.Database.GetMaxIdleConnections()),
+		int(cfg.Data.Database.GetMaxOpenConnections()),
+		cfg.Data.Database.GetConnectionMaxLifetime().AsDuration(),
+	)
+
+	return wrapperClient
+}
