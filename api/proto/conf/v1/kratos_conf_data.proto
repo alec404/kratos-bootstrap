@@ -3,6 +3,7 @@ syntax = "proto3";
 package conf.v1;
 
 import "google/protobuf/duration.proto";
+import "conf/v1/kratos_conf_tls.proto";
 
 option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
 
@@ -59,6 +60,29 @@ message Data {
     google.protobuf.Duration health_check_interval = 8;
   }
 
+  // OpenSearch
+  message OpenSearch {
+    repeated string addresses = 1; // 对端网络地址
+
+    optional string username = 2; // 用户名
+    optional string password = 3; // 密码
+
+    repeated int32 retry_on_status = 4; // 触发重试的HTTP状态码列表，例如 [502, 503, 504]
+    optional bool disable_retry = 5; // 禁用重试
+    optional bool enable_retry_on_timeout = 6; // 是否在请求超时时触发重试
+    optional int32 max_retries = 7; // 最大重试次数
+
+    optional bool compress_request_body = 8; // 是否压缩请求体
+
+    optional bool discover_nodes_on_start = 9; // 启动时发现节点
+    optional google.protobuf.Duration discover_nodes_interval = 10; // 发现节点间隔时间
+
+    optional bool enable_metrics = 60; // 打开性能度量
+    optional bool enable_debug_logger = 61; // 打开调试日志记录器
+
+    optional TLS tls = 70; // TLS配置
+  }
+
   // RabbitMQ
   message RabbitMQ {
     repeated string endpoints = 1;  // 对端网络地址
@@ -67,6 +91,7 @@ message Data {
   Database database = 1;  // 数据库DSN
   Redis redis = 2;  // Redis
   ElasticSearch elasticsearch = 3;  // ElasticSearch数据库
+  OpenSearch opensearch = 4; // OpenSearch数据库
 
   // Message Queue
 

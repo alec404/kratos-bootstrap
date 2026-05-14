@@ -16,6 +16,10 @@ cd $DIR/data/elasticsearch
 go get all
 go mod tidy
 
+cd $DIR/data/opensearch
+go get all
+go mod tidy
+
 cd $DIR/cache/redis
 go get all
 go mod tidy

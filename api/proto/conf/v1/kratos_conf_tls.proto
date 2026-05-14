@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package conf.v1;
+
+option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
+
+// TLS配置
+message TLS {
+  message File {
+    optional string cert_path = 1; // 客户端证书文件路径
+    optional string key_path = 2; // 客户端私钥文件路径
+    optional string ca_path = 3; // CA证书文件路径
+  }
+
+  message Config {
+    optional bytes cert_pem = 1; // 客户端证书PEM
+    optional bytes key_pem = 2; // 客户端私钥PEM
+    optional bytes ca_pem = 3; // CA证书PEM
+  }
+
+  optional File file = 1; // 文件路径形式的TLS配置
+  optional Config config = 2; // PEM内容形式的TLS配置
+
+  bool insecure_skip_verify = 3; // 是否跳过服务端证书校验
+}

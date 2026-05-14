@@ -28,6 +28,7 @@ type Data struct {
 	Database      *Data_Database         `protobuf:"bytes,1,opt,name=database,proto3" json:"database,omitempty"`           // 数据库DSN
 	Redis         *Data_Redis            `protobuf:"bytes,2,opt,name=redis,proto3" json:"redis,omitempty"`                 // Redis
 	Elasticsearch *Data_ElasticSearch    `protobuf:"bytes,3,opt,name=elasticsearch,proto3" json:"elasticsearch,omitempty"` // ElasticSearch数据库
+	Opensearch    *Data_OpenSearch       `protobuf:"bytes,4,opt,name=opensearch,proto3" json:"opensearch,omitempty"`       // OpenSearch数据库
 	Rabbitmq      *Data_RabbitMQ         `protobuf:"bytes,10,opt,name=rabbitmq,proto3,oneof" json:"rabbitmq,omitempty"`    // RabbitMQ服务
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -80,6 +81,13 @@ func (x *Data) GetRedis() *Data_Redis {
 func (x *Data) GetElasticsearch() *Data_ElasticSearch {
 	if x != nil {
 		return x.Elasticsearch
+	}
+	return nil
+}
+
+func (x *Data) GetOpensearch() *Data_OpenSearch {
+	if x != nil {
+		return x.Opensearch
 	}
 	return nil
 }
@@ -417,6 +425,147 @@ func (x *Data_ElasticSearch) GetHealthCheckInterval() *durationpb.Duration {
 	return nil
 }
 
+// OpenSearch
+type Data_OpenSearch struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Addresses             []string               `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`                                                               // 对端网络地址
+	Username              *string                `protobuf:"bytes,2,opt,name=username,proto3,oneof" json:"username,omitempty"`                                                           // 用户名
+	Password              *string                `protobuf:"bytes,3,opt,name=password,proto3,oneof" json:"password,omitempty"`                                                           // 密码
+	RetryOnStatus         []int32                `protobuf:"varint,4,rep,packed,name=retry_on_status,json=retryOnStatus,proto3" json:"retry_on_status,omitempty"`                        // 触发重试的HTTP状态码列表，例如 [502, 503, 504]
+	DisableRetry          *bool                  `protobuf:"varint,5,opt,name=disable_retry,json=disableRetry,proto3,oneof" json:"disable_retry,omitempty"`                              // 禁用重试
+	EnableRetryOnTimeout  *bool                  `protobuf:"varint,6,opt,name=enable_retry_on_timeout,json=enableRetryOnTimeout,proto3,oneof" json:"enable_retry_on_timeout,omitempty"`  // 是否在请求超时时触发重试
+	MaxRetries            *int32                 `protobuf:"varint,7,opt,name=max_retries,json=maxRetries,proto3,oneof" json:"max_retries,omitempty"`                                    // 最大重试次数
+	CompressRequestBody   *bool                  `protobuf:"varint,8,opt,name=compress_request_body,json=compressRequestBody,proto3,oneof" json:"compress_request_body,omitempty"`       // 是否压缩请求体
+	DiscoverNodesOnStart  *bool                  `protobuf:"varint,9,opt,name=discover_nodes_on_start,json=discoverNodesOnStart,proto3,oneof" json:"discover_nodes_on_start,omitempty"`  // 启动时发现节点
+	DiscoverNodesInterval *durationpb.Duration   `protobuf:"bytes,10,opt,name=discover_nodes_interval,json=discoverNodesInterval,proto3,oneof" json:"discover_nodes_interval,omitempty"` // 发现节点间隔时间
+	EnableMetrics         *bool                  `protobuf:"varint,60,opt,name=enable_metrics,json=enableMetrics,proto3,oneof" json:"enable_metrics,omitempty"`                          // 打开性能度量
+	EnableDebugLogger     *bool                  `protobuf:"varint,61,opt,name=enable_debug_logger,json=enableDebugLogger,proto3,oneof" json:"enable_debug_logger,omitempty"`            // 打开调试日志记录器
+	Tls                   *TLS                   `protobuf:"bytes,70,opt,name=tls,proto3,oneof" json:"tls,omitempty"`                                                                    // TLS配置
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *Data_OpenSearch) Reset() {
+	*x = Data_OpenSearch{}
+	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Data_OpenSearch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Data_OpenSearch) ProtoMessage() {}
+
+func (x *Data_OpenSearch) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Data_OpenSearch.ProtoReflect.Descriptor instead.
+func (*Data_OpenSearch) Descriptor() ([]byte, []int) {
+	return file_conf_v1_kratos_conf_data_proto_rawDescGZIP(), []int{0, 3}
+}
+
+func (x *Data_OpenSearch) GetAddresses() []string {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+func (x *Data_OpenSearch) GetUsername() string {
+	if x != nil && x.Username != nil {
+		return *x.Username
+	}
+	return ""
+}
+
+func (x *Data_OpenSearch) GetPassword() string {
+	if x != nil && x.Password != nil {
+		return *x.Password
+	}
+	return ""
+}
+
+func (x *Data_OpenSearch) GetRetryOnStatus() []int32 {
+	if x != nil {
+		return x.RetryOnStatus
+	}
+	return nil
+}
+
+func (x *Data_OpenSearch) GetDisableRetry() bool {
+	if x != nil && x.DisableRetry != nil {
+		return *x.DisableRetry
+	}
+	return false
+}
+
+func (x *Data_OpenSearch) GetEnableRetryOnTimeout() bool {
+	if x != nil && x.EnableRetryOnTimeout != nil {
+		return *x.EnableRetryOnTimeout
+	}
+	return false
+}
+
+func (x *Data_OpenSearch) GetMaxRetries() int32 {
+	if x != nil && x.MaxRetries != nil {
+		return *x.MaxRetries
+	}
+	return 0
+}
+
+func (x *Data_OpenSearch) GetCompressRequestBody() bool {
+	if x != nil && x.CompressRequestBody != nil {
+		return *x.CompressRequestBody
+	}
+	return false
+}
+
+func (x *Data_OpenSearch) GetDiscoverNodesOnStart() bool {
+	if x != nil && x.DiscoverNodesOnStart != nil {
+		return *x.DiscoverNodesOnStart
+	}
+	return false
+}
+
+func (x *Data_OpenSearch) GetDiscoverNodesInterval() *durationpb.Duration {
+	if x != nil {
+		return x.DiscoverNodesInterval
+	}
+	return nil
+}
+
+func (x *Data_OpenSearch) GetEnableMetrics() bool {
+	if x != nil && x.EnableMetrics != nil {
+		return *x.EnableMetrics
+	}
+	return false
+}
+
+func (x *Data_OpenSearch) GetEnableDebugLogger() bool {
+	if x != nil && x.EnableDebugLogger != nil {
+		return *x.EnableDebugLogger
+	}
+	return false
+}
+
+func (x *Data_OpenSearch) GetTls() *TLS {
+	if x != nil {
+		return x.Tls
+	}
+	return nil
+}
+
 // RabbitMQ
 type Data_RabbitMQ struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -427,7 +576,7 @@ type Data_RabbitMQ struct {
 
 func (x *Data_RabbitMQ) Reset() {
 	*x = Data_RabbitMQ{}
-	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[4]
+	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -439,7 +588,7 @@ func (x *Data_RabbitMQ) String() string {
 func (*Data_RabbitMQ) ProtoMessage() {}
 
 func (x *Data_RabbitMQ) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[4]
+	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -452,7 +601,7 @@ func (x *Data_RabbitMQ) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data_RabbitMQ.ProtoReflect.Descriptor instead.
 func (*Data_RabbitMQ) Descriptor() ([]byte, []int) {
-	return file_conf_v1_kratos_conf_data_proto_rawDescGZIP(), []int{0, 3}
+	return file_conf_v1_kratos_conf_data_proto_rawDescGZIP(), []int{0, 4}
 }
 
 func (x *Data_RabbitMQ) GetEndpoints() []string {
@@ -475,7 +624,7 @@ type Data_Database_Replica struct {
 
 func (x *Data_Database_Replica) Reset() {
 	*x = Data_Database_Replica{}
-	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[5]
+	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -487,7 +636,7 @@ func (x *Data_Database_Replica) String() string {
 func (*Data_Database_Replica) ProtoMessage() {}
 
 func (x *Data_Database_Replica) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[5]
+	mi := &file_conf_v1_kratos_conf_data_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -535,11 +684,14 @@ var File_conf_v1_kratos_conf_data_proto protoreflect.FileDescriptor
 
 const file_conf_v1_kratos_conf_data_proto_rawDesc = "" +
 	"\n" +
-	"\x1econf/v1/kratos_conf_data.proto\x12\aconf.v1\x1a\x1egoogle/protobuf/duration.proto\"\xc5\f\n" +
+	"\x1econf/v1/kratos_conf_data.proto\x12\aconf.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dconf/v1/kratos_conf_tls.proto\"\xd2\x13\n" +
 	"\x04Data\x122\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x16.conf.v1.Data.DatabaseR\bdatabase\x12)\n" +
 	"\x05redis\x18\x02 \x01(\v2\x13.conf.v1.Data.RedisR\x05redis\x12A\n" +
-	"\relasticsearch\x18\x03 \x01(\v2\x1b.conf.v1.Data.ElasticSearchR\relasticsearch\x127\n" +
+	"\relasticsearch\x18\x03 \x01(\v2\x1b.conf.v1.Data.ElasticSearchR\relasticsearch\x128\n" +
+	"\n" +
+	"opensearch\x18\x04 \x01(\v2\x18.conf.v1.Data.OpenSearchR\n" +
+	"opensearch\x127\n" +
 	"\brabbitmq\x18\n" +
 	" \x01(\v2\x16.conf.v1.Data.RabbitMQH\x00R\brabbitmq\x88\x01\x01\x1a\x82\x05\n" +
 	"\bDatabase\x12\x16\n" +
@@ -578,7 +730,36 @@ const file_conf_v1_kratos_conf_data_proto_rawDesc = "" +
 	"enableGzip\x12\x14\n" +
 	"\x05debug\x18\x06 \x01(\bR\x05debug\x12#\n" +
 	"\renable_health\x18\a \x01(\bR\fenableHealth\x12M\n" +
-	"\x15health_check_interval\x18\b \x01(\v2\x19.google.protobuf.DurationR\x13healthCheckInterval\x1a(\n" +
+	"\x15health_check_interval\x18\b \x01(\v2\x19.google.protobuf.DurationR\x13healthCheckInterval\x1a\xd0\x06\n" +
+	"\n" +
+	"OpenSearch\x12\x1c\n" +
+	"\taddresses\x18\x01 \x03(\tR\taddresses\x12\x1f\n" +
+	"\busername\x18\x02 \x01(\tH\x00R\busername\x88\x01\x01\x12\x1f\n" +
+	"\bpassword\x18\x03 \x01(\tH\x01R\bpassword\x88\x01\x01\x12&\n" +
+	"\x0fretry_on_status\x18\x04 \x03(\x05R\rretryOnStatus\x12(\n" +
+	"\rdisable_retry\x18\x05 \x01(\bH\x02R\fdisableRetry\x88\x01\x01\x12:\n" +
+	"\x17enable_retry_on_timeout\x18\x06 \x01(\bH\x03R\x14enableRetryOnTimeout\x88\x01\x01\x12$\n" +
+	"\vmax_retries\x18\a \x01(\x05H\x04R\n" +
+	"maxRetries\x88\x01\x01\x127\n" +
+	"\x15compress_request_body\x18\b \x01(\bH\x05R\x13compressRequestBody\x88\x01\x01\x12:\n" +
+	"\x17discover_nodes_on_start\x18\t \x01(\bH\x06R\x14discoverNodesOnStart\x88\x01\x01\x12V\n" +
+	"\x17discover_nodes_interval\x18\n" +
+	" \x01(\v2\x19.google.protobuf.DurationH\aR\x15discoverNodesInterval\x88\x01\x01\x12*\n" +
+	"\x0eenable_metrics\x18< \x01(\bH\bR\renableMetrics\x88\x01\x01\x123\n" +
+	"\x13enable_debug_logger\x18= \x01(\bH\tR\x11enableDebugLogger\x88\x01\x01\x12#\n" +
+	"\x03tls\x18F \x01(\v2\f.conf.v1.TLSH\n" +
+	"R\x03tls\x88\x01\x01B\v\n" +
+	"\t_usernameB\v\n" +
+	"\t_passwordB\x10\n" +
+	"\x0e_disable_retryB\x1a\n" +
+	"\x18_enable_retry_on_timeoutB\x0e\n" +
+	"\f_max_retriesB\x18\n" +
+	"\x16_compress_request_bodyB\x1a\n" +
+	"\x18_discover_nodes_on_startB\x1a\n" +
+	"\x18_discover_nodes_intervalB\x11\n" +
+	"\x0f_enable_metricsB\x16\n" +
+	"\x14_enable_debug_loggerB\x06\n" +
+	"\x04_tls\x1a(\n" +
 	"\bRabbitMQ\x12\x1c\n" +
 	"\tendpoints\x18\x01 \x03(\tR\tendpointsB\v\n" +
 	"\t_rabbitmqB?Z=github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1b\x06proto3"
@@ -595,33 +776,38 @@ func file_conf_v1_kratos_conf_data_proto_rawDescGZIP() []byte {
 	return file_conf_v1_kratos_conf_data_proto_rawDescData
 }
 
-var file_conf_v1_kratos_conf_data_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_conf_v1_kratos_conf_data_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_conf_v1_kratos_conf_data_proto_goTypes = []any{
 	(*Data)(nil),                  // 0: conf.v1.Data
 	(*Data_Database)(nil),         // 1: conf.v1.Data.Database
 	(*Data_Redis)(nil),            // 2: conf.v1.Data.Redis
 	(*Data_ElasticSearch)(nil),    // 3: conf.v1.Data.ElasticSearch
-	(*Data_RabbitMQ)(nil),         // 4: conf.v1.Data.RabbitMQ
-	(*Data_Database_Replica)(nil), // 5: conf.v1.Data.Database.Replica
-	(*durationpb.Duration)(nil),   // 6: google.protobuf.Duration
+	(*Data_OpenSearch)(nil),       // 4: conf.v1.Data.OpenSearch
+	(*Data_RabbitMQ)(nil),         // 5: conf.v1.Data.RabbitMQ
+	(*Data_Database_Replica)(nil), // 6: conf.v1.Data.Database.Replica
+	(*durationpb.Duration)(nil),   // 7: google.protobuf.Duration
+	(*TLS)(nil),                   // 8: conf.v1.TLS
 }
 var file_conf_v1_kratos_conf_data_proto_depIdxs = []int32{
 	1,  // 0: conf.v1.Data.database:type_name -> conf.v1.Data.Database
 	2,  // 1: conf.v1.Data.redis:type_name -> conf.v1.Data.Redis
 	3,  // 2: conf.v1.Data.elasticsearch:type_name -> conf.v1.Data.ElasticSearch
-	4,  // 3: conf.v1.Data.rabbitmq:type_name -> conf.v1.Data.RabbitMQ
-	6,  // 4: conf.v1.Data.Database.connection_max_lifetime:type_name -> google.protobuf.Duration
-	5,  // 5: conf.v1.Data.Database.replicas:type_name -> conf.v1.Data.Database.Replica
-	6,  // 6: conf.v1.Data.Redis.dial_timeout:type_name -> google.protobuf.Duration
-	6,  // 7: conf.v1.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
-	6,  // 8: conf.v1.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
-	6,  // 9: conf.v1.Data.ElasticSearch.health_check_interval:type_name -> google.protobuf.Duration
-	6,  // 10: conf.v1.Data.Database.Replica.connection_max_lifetime:type_name -> google.protobuf.Duration
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	4,  // 3: conf.v1.Data.opensearch:type_name -> conf.v1.Data.OpenSearch
+	5,  // 4: conf.v1.Data.rabbitmq:type_name -> conf.v1.Data.RabbitMQ
+	7,  // 5: conf.v1.Data.Database.connection_max_lifetime:type_name -> google.protobuf.Duration
+	6,  // 6: conf.v1.Data.Database.replicas:type_name -> conf.v1.Data.Database.Replica
+	7,  // 7: conf.v1.Data.Redis.dial_timeout:type_name -> google.protobuf.Duration
+	7,  // 8: conf.v1.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
+	7,  // 9: conf.v1.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
+	7,  // 10: conf.v1.Data.ElasticSearch.health_check_interval:type_name -> google.protobuf.Duration
+	7,  // 11: conf.v1.Data.OpenSearch.discover_nodes_interval:type_name -> google.protobuf.Duration
+	8,  // 12: conf.v1.Data.OpenSearch.tls:type_name -> conf.v1.TLS
+	7,  // 13: conf.v1.Data.Database.Replica.connection_max_lifetime:type_name -> google.protobuf.Duration
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_conf_v1_kratos_conf_data_proto_init() }
@@ -629,14 +815,16 @@ func file_conf_v1_kratos_conf_data_proto_init() {
 	if File_conf_v1_kratos_conf_data_proto != nil {
 		return
 	}
+	file_conf_v1_kratos_conf_tls_proto_init()
 	file_conf_v1_kratos_conf_data_proto_msgTypes[0].OneofWrappers = []any{}
+	file_conf_v1_kratos_conf_data_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_v1_kratos_conf_data_proto_rawDesc), len(file_conf_v1_kratos_conf_data_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
