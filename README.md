@@ -11,7 +11,7 @@
 - 支持 OpenTelemetry 链路追踪，包含 stdout、OTLP/gRPC、OTLP/HTTP exporter。
 - 支持 Prometheus 和 OTLP 指标导出。
 - 提供 HTTP/gRPC Server 和 Client 的快速创建方法。
-- 提供可选的 Redis、Elasticsearch、Ent 客户端辅助模块。
+- 提供可选的 Redis、Elasticsearch、OpenSearch、Ent 客户端辅助模块。
 
 ## 安装
 
@@ -24,6 +24,7 @@ go get github.com/alec404/kratos-bootstrap
 ```bash
 go get github.com/alec404/kratos-bootstrap/cache/redis
 go get github.com/alec404/kratos-bootstrap/data/elasticsearch
+go get github.com/alec404/kratos-bootstrap/data/opensearch
 go get github.com/alec404/kratos-bootstrap/data/ent
 ```
 
@@ -39,6 +40,7 @@ rpc/                  HTTP/gRPC Server 和 Client 辅助方法
 tracer/               OpenTelemetry tracing 初始化
 cache/redis/          可选 Redis 辅助模块
 data/elasticsearch/   可选 Elasticsearch 辅助模块
+data/opensearch/      可选 OpenSearch 辅助模块
 data/ent/             可选 Ent 辅助模块
 ```
 
@@ -182,7 +184,7 @@ message Bootstrap {
 
 - `server`：HTTP/gRPC 监听地址、超时、CORS、TLS、中间件。
 - `client`：HTTP/gRPC 客户端 endpoint、超时、TLS、中间件。
-- `data`：数据库、Redis、Elasticsearch、RabbitMQ 连接配置。
+- `data`：数据库、Redis、Elasticsearch、OpenSearch、RabbitMQ 连接配置。
 - `trace`：OpenTelemetry tracing exporter 配置。
 - `logger`：标准日志或 zap 日志配置。
 - `metrics`：Prometheus/OTLP 指标配置。
