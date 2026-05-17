@@ -3,7 +3,7 @@ module github.com/alec404/kratos-bootstrap/cache/redis
 go 1.25.4
 
 require (
-	github.com/alec404/kratos-bootstrap v0.0.1
+	github.com/alec404/kratos-bootstrap v1.3.0
 	github.com/go-kratos/kratos/v2 v2.9.2
 	github.com/redis/go-redis/extra/redisotel/v9 v9.19.0
 	github.com/redis/go-redis/v9 v9.19.0

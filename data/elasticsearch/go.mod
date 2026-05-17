@@ -3,7 +3,7 @@ module github.com/alec404/kratos-bootstrap/data/elasticsearch
 go 1.25.4
 
 require (
-	github.com/alec404/kratos-bootstrap v0.0.1
+	github.com/alec404/kratos-bootstrap v1.3.0
 	github.com/go-kratos/kratos/v2 v2.9.2
 	github.com/olivere/elastic v6.2.37+incompatible
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0

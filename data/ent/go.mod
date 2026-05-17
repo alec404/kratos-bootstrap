@@ -5,7 +5,7 @@ go 1.25.4
 require (
 	entgo.io/ent v0.14.6
 	github.com/alec404/go-crud/entgo v0.0.4
-	github.com/alec404/kratos-bootstrap v0.0.1
+	github.com/alec404/kratos-bootstrap v1.3.0
 	github.com/go-kratos/kratos/v2 v2.9.2
 )
 
@@ -28,6 +28,8 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/mod v0.35.0 // indirect
+	golang.org/x/tools v0.44.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
