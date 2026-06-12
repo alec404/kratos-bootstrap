@@ -121,6 +121,7 @@ httpServer := rpc.CreateHTTPServer(cfg, logger)
 
 - recovery
 - tracing
+- tracing operation exclude（按 transport.Operation() 精确/前缀排除，HTTP/gRPC 通用）
 - validation
 - logging
 - BBR rate limit
@@ -144,6 +145,28 @@ httpServer := rpc.CreateHTTPServerWithOptions(
 	},
 )
 ```
+
+如果部分 HTTP/gRPC operation 不需要创建 span，可以在对应 `middleware.tracing` 下配置排除规则：
+
+```yaml
+server:
+  http:
+    middleware:
+      enable_tracing: true
+      tracing:
+        exclude_operations:
+          - /api/items/{id}
+          - /helloworld.Greeter/SayHello
+        exclude_operation_prefixes:
+          - /debug/pprof/
+          - /helloworld.InternalService/
+```
+
+`exclude_operations` 和 `exclude_operation_prefixes` 统一匹配 Kratos `transport.Operation()`：HTTP 通常是 path template（如 `/api/items/{id}`），gRPC 通常是 full method（如 `/helloworld.Greeter/SayHello`）。
+
+命中排除规则后，不只跳过当前 server/client span；还会把当前 context 标记为 unsampled parent，使后续 child span 和下游服务调用在 `ParentBased` sampler 下继续保持不采样。
+
+跨服务抑制依赖 client tracing middleware 注入 unsampled `traceparent` 到下游请求；因此如果希望“当前接口及其下游调用都不产生 trace”，对应下游 client 的 `enable_tracing` 仍需保持开启。
 
 ## gRPC Server
 

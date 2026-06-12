@@ -16,7 +16,6 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware"
 	midRateLimit "github.com/go-kratos/kratos/v2/middleware/ratelimit"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/middleware/validate"
 
 	kratosHttp "github.com/go-kratos/kratos/v2/transport/http"
@@ -37,7 +36,7 @@ func CreateHTTPClient(ctx context.Context, serviceName string, cfg *conf.Bootstr
 			ms = append(ms, recovery.Recovery())
 		}
 		if cfg.Client.Http.Middleware.GetEnableTracing() {
-			ms = append(ms, tracing.Client())
+			ms = append(ms, tracingClient(cfg.Client.Http.Middleware.GetTracing()))
 		}
 		if cfg.Client.Http.Middleware.GetEnableValidate() {
 			ms = append(ms, validate.Validator())
@@ -101,7 +100,7 @@ func CreateHTTPServerWithOptions(cfg *conf.Bootstrap, logger log.Logger, serverO
 			ms = append(ms, recovery.Recovery())
 		}
 		if cfg.Server.Http.Middleware.GetEnableTracing() {
-			ms = append(ms, tracing.Server())
+			ms = append(ms, tracingServer(cfg.Server.Http.Middleware.GetTracing()))
 		}
 		if cfg.Server.Http.Middleware.GetEnableValidate() {
 			ms = append(ms, validate.Validator())

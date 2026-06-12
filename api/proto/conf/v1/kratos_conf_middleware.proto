@@ -34,6 +34,14 @@ message Middleware {
     string prefix_key = 4;
   }
 
+  // Tracing
+  message Tracing {
+    // HTTP/gRPC 通用链路追踪精确排除 operation，匹配 transport.Operation()。
+    repeated string exclude_operations = 1;
+    // HTTP/gRPC 通用链路追踪前缀排除 operation，匹配 transport.Operation()。
+    repeated string exclude_operation_prefixes = 2;
+  }
+
   bool enable_logging = 1; // 日志开关
   bool enable_recovery = 2; // 异常恢复
   bool enable_tracing = 3; // 链路追踪开关
@@ -45,4 +53,5 @@ message Middleware {
   Metrics metrics = 7;
   Auth auth = 8;
   HttpCache http_cache = 10;
+  Tracing tracing = 11;
 }

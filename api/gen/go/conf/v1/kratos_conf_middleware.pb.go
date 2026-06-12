@@ -34,6 +34,7 @@ type Middleware struct {
 	Metrics              *Middleware_Metrics     `protobuf:"bytes,7,opt,name=metrics,proto3" json:"metrics,omitempty"`
 	Auth                 *Middleware_Auth        `protobuf:"bytes,8,opt,name=auth,proto3" json:"auth,omitempty"`
 	HttpCache            *Middleware_HttpCache   `protobuf:"bytes,10,opt,name=http_cache,json=httpCache,proto3" json:"http_cache,omitempty"`
+	Tracing              *Middleware_Tracing     `protobuf:"bytes,11,opt,name=tracing,proto3" json:"tracing,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -134,6 +135,13 @@ func (x *Middleware) GetAuth() *Middleware_Auth {
 func (x *Middleware) GetHttpCache() *Middleware_HttpCache {
 	if x != nil {
 		return x.HttpCache
+	}
+	return nil
+}
+
+func (x *Middleware) GetTracing() *Middleware_Tracing {
+	if x != nil {
+		return x.Tracing
 	}
 	return nil
 }
@@ -374,11 +382,66 @@ func (x *Middleware_HttpCache) GetPrefixKey() string {
 	return ""
 }
 
+// Tracing
+type Middleware_Tracing struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// HTTP/gRPC 通用链路追踪精确排除 operation，匹配 transport.Operation()。
+	ExcludeOperations []string `protobuf:"bytes,1,rep,name=exclude_operations,json=excludeOperations,proto3" json:"exclude_operations,omitempty"`
+	// HTTP/gRPC 通用链路追踪前缀排除 operation，匹配 transport.Operation()。
+	ExcludeOperationPrefixes []string `protobuf:"bytes,2,rep,name=exclude_operation_prefixes,json=excludeOperationPrefixes,proto3" json:"exclude_operation_prefixes,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *Middleware_Tracing) Reset() {
+	*x = Middleware_Tracing{}
+	mi := &file_conf_v1_kratos_conf_middleware_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Middleware_Tracing) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Middleware_Tracing) ProtoMessage() {}
+
+func (x *Middleware_Tracing) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_v1_kratos_conf_middleware_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Middleware_Tracing.ProtoReflect.Descriptor instead.
+func (*Middleware_Tracing) Descriptor() ([]byte, []int) {
+	return file_conf_v1_kratos_conf_middleware_proto_rawDescGZIP(), []int{0, 4}
+}
+
+func (x *Middleware_Tracing) GetExcludeOperations() []string {
+	if x != nil {
+		return x.ExcludeOperations
+	}
+	return nil
+}
+
+func (x *Middleware_Tracing) GetExcludeOperationPrefixes() []string {
+	if x != nil {
+		return x.ExcludeOperationPrefixes
+	}
+	return nil
+}
+
 var File_conf_v1_kratos_conf_middleware_proto protoreflect.FileDescriptor
 
 const file_conf_v1_kratos_conf_middleware_proto_rawDesc = "" +
 	"\n" +
-	"$conf/v1/kratos_conf_middleware.proto\x12\aconf.v1\x1a\x1egoogle/protobuf/duration.proto\"\xbf\x06\n" +
+	"$conf/v1/kratos_conf_middleware.proto\x12\aconf.v1\x1a\x1egoogle/protobuf/duration.proto\"\xee\a\n" +
 	"\n" +
 	"Middleware\x12%\n" +
 	"\x0eenable_logging\x18\x01 \x01(\bR\renableLogging\x12'\n" +
@@ -392,7 +455,8 @@ const file_conf_v1_kratos_conf_middleware_proto_rawDesc = "" +
 	"\x04auth\x18\b \x01(\v2\x18.conf.v1.Middleware.AuthR\x04auth\x12<\n" +
 	"\n" +
 	"http_cache\x18\n" +
-	" \x01(\v2\x1d.conf.v1.Middleware.HttpCacheR\thttpCache\x1a0\n" +
+	" \x01(\v2\x1d.conf.v1.Middleware.HttpCacheR\thttpCache\x125\n" +
+	"\atracing\x18\v \x01(\v2\x1b.conf.v1.Middleware.TracingR\atracing\x1a0\n" +
 	"\x04Auth\x12\x16\n" +
 	"\x06method\x18\x01 \x01(\tR\x06method\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x1a!\n" +
@@ -408,7 +472,10 @@ const file_conf_v1_kratos_conf_middleware_proto_rawDesc = "" +
 	"\x06expire\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x06expire\x12\x14\n" +
 	"\x05store\x18\x03 \x01(\tR\x05store\x12\x1d\n" +
 	"\n" +
-	"prefix_key\x18\x04 \x01(\tR\tprefixKeyB?Z=github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1b\x06proto3"
+	"prefix_key\x18\x04 \x01(\tR\tprefixKey\x1av\n" +
+	"\aTracing\x12-\n" +
+	"\x12exclude_operations\x18\x01 \x03(\tR\x11excludeOperations\x12<\n" +
+	"\x1aexclude_operation_prefixes\x18\x02 \x03(\tR\x18excludeOperationPrefixesB?Z=github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1b\x06proto3"
 
 var (
 	file_conf_v1_kratos_conf_middleware_proto_rawDescOnce sync.Once
@@ -422,26 +489,28 @@ func file_conf_v1_kratos_conf_middleware_proto_rawDescGZIP() []byte {
 	return file_conf_v1_kratos_conf_middleware_proto_rawDescData
 }
 
-var file_conf_v1_kratos_conf_middleware_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_conf_v1_kratos_conf_middleware_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_conf_v1_kratos_conf_middleware_proto_goTypes = []any{
 	(*Middleware)(nil),             // 0: conf.v1.Middleware
 	(*Middleware_Auth)(nil),        // 1: conf.v1.Middleware.Auth
 	(*Middleware_RateLimiter)(nil), // 2: conf.v1.Middleware.RateLimiter
 	(*Middleware_Metrics)(nil),     // 3: conf.v1.Middleware.Metrics
 	(*Middleware_HttpCache)(nil),   // 4: conf.v1.Middleware.HttpCache
-	(*durationpb.Duration)(nil),    // 5: google.protobuf.Duration
+	(*Middleware_Tracing)(nil),     // 5: conf.v1.Middleware.Tracing
+	(*durationpb.Duration)(nil),    // 6: google.protobuf.Duration
 }
 var file_conf_v1_kratos_conf_middleware_proto_depIdxs = []int32{
 	2, // 0: conf.v1.Middleware.limiter:type_name -> conf.v1.Middleware.RateLimiter
 	3, // 1: conf.v1.Middleware.metrics:type_name -> conf.v1.Middleware.Metrics
 	1, // 2: conf.v1.Middleware.auth:type_name -> conf.v1.Middleware.Auth
 	4, // 3: conf.v1.Middleware.http_cache:type_name -> conf.v1.Middleware.HttpCache
-	5, // 4: conf.v1.Middleware.HttpCache.expire:type_name -> google.protobuf.Duration
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	5, // 4: conf.v1.Middleware.tracing:type_name -> conf.v1.Middleware.Tracing
+	6, // 5: conf.v1.Middleware.HttpCache.expire:type_name -> google.protobuf.Duration
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_conf_v1_kratos_conf_middleware_proto_init() }
@@ -455,7 +524,7 @@ func file_conf_v1_kratos_conf_middleware_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_v1_kratos_conf_middleware_proto_rawDesc), len(file_conf_v1_kratos_conf_middleware_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

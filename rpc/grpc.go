@@ -23,7 +23,6 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware"
 	midRateLimit "github.com/go-kratos/kratos/v2/middleware/ratelimit"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/middleware/validate"
 
 	conf "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1"
@@ -68,7 +67,7 @@ func CreateGrpcClient(ctx context.Context, serviceName string, cfg *conf.Bootstr
 				ms = append(ms, recovery.Recovery())
 			}
 			if cfg.Client.Grpc.Middleware.GetEnableTracing() {
-				ms = append(ms, tracing.Client())
+				ms = append(ms, tracingClient(cfg.Client.Grpc.Middleware.GetTracing()))
 			}
 			if cfg.Client.Grpc.Middleware.GetEnableValidate() {
 				ms = append(ms, validate.Validator())
@@ -189,7 +188,7 @@ func CreateGrpcServer(cfg *conf.Bootstrap, logger log.Logger, m ...middleware.Mi
 			ms = append(ms, recovery.Recovery())
 		}
 		if cfg.Server.Grpc.Middleware.GetEnableTracing() {
-			ms = append(ms, tracing.Server())
+			ms = append(ms, tracingServer(cfg.Server.Grpc.Middleware.GetTracing()))
 		}
 		if cfg.Server.Grpc.Middleware.GetEnableValidate() {
 			ms = append(ms, validate.Validator())
