@@ -1,4 +1,5 @@
 version: v2
+
 lint:
   use:
     - STANDARD
@@ -7,5 +8,7 @@ breaking:
     - FILE
 modules:
   - path: proto
+    name: buf.build/alec404-apis/kratos-bootstrap
+
 deps:
   - buf.build/kratos/apis
