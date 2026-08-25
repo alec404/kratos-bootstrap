@@ -144,6 +144,7 @@ type Client_GRPC struct {
 	Addr          string                 `protobuf:"bytes,3,opt,name=addr,proto3" json:"addr,omitempty"`                                  // 服务地址
 	Tls           *Client_TLS            `protobuf:"bytes,4,opt,name=tls,proto3" json:"tls,omitempty"`                                    // TLS配置
 	MaxMsgSize    int32                  `protobuf:"varint,5,opt,name=max_msg_size,json=maxMsgSize,proto3" json:"max_msg_size,omitempty"` // 最大消息大小（MB）
+	Keepalive     *Client_Keepalive      `protobuf:"bytes,6,opt,name=keepalive,proto3" json:"keepalive,omitempty"`                        // 客户端 Keepalive 配置
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -211,6 +212,13 @@ func (x *Client_GRPC) GetMaxMsgSize() int32 {
 		return x.MaxMsgSize
 	}
 	return 0
+}
+
+func (x *Client_GRPC) GetKeepalive() *Client_Keepalive {
+	if x != nil {
+		return x.Keepalive
+	}
+	return nil
 }
 
 type Client_TLS struct {
@@ -289,11 +297,79 @@ func (x *Client_TLS) GetServerName() string {
 	return ""
 }
 
+type Client_Keepalive struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Enable              bool                   `protobuf:"varint,1,opt,name=enable,proto3" json:"enable,omitempty"`                                                        // 是否启用客户端 Keepalive
+	Time                *durationpb.Duration   `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`                                                             // 无读取活动后发送 PING 的间隔
+	Timeout             *durationpb.Duration   `protobuf:"bytes,3,opt,name=timeout,proto3" json:"timeout,omitempty"`                                                       // PING 无响应后的连接关闭等待时间
+	PermitWithoutStream bool                   `protobuf:"varint,4,opt,name=permit_without_stream,json=permitWithoutStream,proto3" json:"permit_without_stream,omitempty"` // 无活跃 RPC 时是否继续发送 PING
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Client_Keepalive) Reset() {
+	*x = Client_Keepalive{}
+	mi := &file_conf_v1_kratos_conf_client_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Client_Keepalive) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Client_Keepalive) ProtoMessage() {}
+
+func (x *Client_Keepalive) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_v1_kratos_conf_client_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Client_Keepalive.ProtoReflect.Descriptor instead.
+func (*Client_Keepalive) Descriptor() ([]byte, []int) {
+	return file_conf_v1_kratos_conf_client_proto_rawDescGZIP(), []int{0, 3}
+}
+
+func (x *Client_Keepalive) GetEnable() bool {
+	if x != nil {
+		return x.Enable
+	}
+	return false
+}
+
+func (x *Client_Keepalive) GetTime() *durationpb.Duration {
+	if x != nil {
+		return x.Time
+	}
+	return nil
+}
+
+func (x *Client_Keepalive) GetTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.Timeout
+	}
+	return nil
+}
+
+func (x *Client_Keepalive) GetPermitWithoutStream() bool {
+	if x != nil {
+		return x.PermitWithoutStream
+	}
+	return false
+}
+
 var File_conf_v1_kratos_conf_client_proto protoreflect.FileDescriptor
 
 const file_conf_v1_kratos_conf_client_proto_rawDesc = "" +
 	"\n" +
-	" conf/v1/kratos_conf_client.proto\x12\aconf.v1\x1a\x1egoogle/protobuf/duration.proto\x1a$conf/v1/kratos_conf_middleware.proto\"\xc5\x04\n" +
+	" conf/v1/kratos_conf_client.proto\x12\aconf.v1\x1a\x1egoogle/protobuf/duration.proto\x1a$conf/v1/kratos_conf_middleware.proto\"\xbc\x06\n" +
 	"\x06Client\x12(\n" +
 	"\x04http\x18\x01 \x01(\v2\x14.conf.v1.Client.HTTPR\x04http\x12(\n" +
 	"\x04grpc\x18\x02 \x01(\v2\x14.conf.v1.Client.GRPCR\x04grpc\x1a\x84\x01\n" +
@@ -302,7 +378,7 @@ const file_conf_v1_kratos_conf_client_proto_rawDesc = "" +
 	"\n" +
 	"middleware\x18\x02 \x01(\v2\x13.conf.v1.MiddlewareR\n" +
 	"middleware\x12\x12\n" +
-	"\x04addr\x18\x03 \x01(\tR\x04addr\x1a\xcd\x01\n" +
+	"\x04addr\x18\x03 \x01(\tR\x04addr\x1a\x86\x02\n" +
 	"\x04GRPC\x123\n" +
 	"\atimeout\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x123\n" +
 	"\n" +
@@ -311,14 +387,20 @@ const file_conf_v1_kratos_conf_client_proto_rawDesc = "" +
 	"\x04addr\x18\x03 \x01(\tR\x04addr\x12%\n" +
 	"\x03tls\x18\x04 \x01(\v2\x13.conf.v1.Client.TLSR\x03tls\x12 \n" +
 	"\fmax_msg_size\x18\x05 \x01(\x05R\n" +
-	"maxMsgSize\x1a\x8f\x01\n" +
+	"maxMsgSize\x127\n" +
+	"\tkeepalive\x18\x06 \x01(\v2\x19.conf.v1.Client.KeepaliveR\tkeepalive\x1a\x8f\x01\n" +
 	"\x03TLS\x12\x16\n" +
 	"\x06enable\x18\x01 \x01(\bR\x06enable\x12\x1b\n" +
 	"\tcert_file\x18\x02 \x01(\tR\bcertFile\x12\x19\n" +
 	"\bkey_file\x18\x03 \x01(\tR\akeyFile\x12\x17\n" +
 	"\aca_file\x18\x04 \x01(\tR\x06caFile\x12\x1f\n" +
 	"\vserver_name\x18\x05 \x01(\tR\n" +
-	"serverNameB?Z=github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1b\x06proto3"
+	"serverName\x1a\xbb\x01\n" +
+	"\tKeepalive\x12\x16\n" +
+	"\x06enable\x18\x01 \x01(\bR\x06enable\x12-\n" +
+	"\x04time\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x04time\x123\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x122\n" +
+	"\x15permit_without_stream\x18\x04 \x01(\bR\x13permitWithoutStreamB?Z=github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1b\x06proto3"
 
 var (
 	file_conf_v1_kratos_conf_client_proto_rawDescOnce sync.Once
@@ -332,28 +414,32 @@ func file_conf_v1_kratos_conf_client_proto_rawDescGZIP() []byte {
 	return file_conf_v1_kratos_conf_client_proto_rawDescData
 }
 
-var file_conf_v1_kratos_conf_client_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_conf_v1_kratos_conf_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_conf_v1_kratos_conf_client_proto_goTypes = []any{
 	(*Client)(nil),              // 0: conf.v1.Client
 	(*Client_HTTP)(nil),         // 1: conf.v1.Client.HTTP
 	(*Client_GRPC)(nil),         // 2: conf.v1.Client.GRPC
 	(*Client_TLS)(nil),          // 3: conf.v1.Client.TLS
-	(*durationpb.Duration)(nil), // 4: google.protobuf.Duration
-	(*Middleware)(nil),          // 5: conf.v1.Middleware
+	(*Client_Keepalive)(nil),    // 4: conf.v1.Client.Keepalive
+	(*durationpb.Duration)(nil), // 5: google.protobuf.Duration
+	(*Middleware)(nil),          // 6: conf.v1.Middleware
 }
 var file_conf_v1_kratos_conf_client_proto_depIdxs = []int32{
-	1, // 0: conf.v1.Client.http:type_name -> conf.v1.Client.HTTP
-	2, // 1: conf.v1.Client.grpc:type_name -> conf.v1.Client.GRPC
-	4, // 2: conf.v1.Client.HTTP.timeout:type_name -> google.protobuf.Duration
-	5, // 3: conf.v1.Client.HTTP.middleware:type_name -> conf.v1.Middleware
-	4, // 4: conf.v1.Client.GRPC.timeout:type_name -> google.protobuf.Duration
-	5, // 5: conf.v1.Client.GRPC.middleware:type_name -> conf.v1.Middleware
-	3, // 6: conf.v1.Client.GRPC.tls:type_name -> conf.v1.Client.TLS
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	1,  // 0: conf.v1.Client.http:type_name -> conf.v1.Client.HTTP
+	2,  // 1: conf.v1.Client.grpc:type_name -> conf.v1.Client.GRPC
+	5,  // 2: conf.v1.Client.HTTP.timeout:type_name -> google.protobuf.Duration
+	6,  // 3: conf.v1.Client.HTTP.middleware:type_name -> conf.v1.Middleware
+	5,  // 4: conf.v1.Client.GRPC.timeout:type_name -> google.protobuf.Duration
+	6,  // 5: conf.v1.Client.GRPC.middleware:type_name -> conf.v1.Middleware
+	3,  // 6: conf.v1.Client.GRPC.tls:type_name -> conf.v1.Client.TLS
+	4,  // 7: conf.v1.Client.GRPC.keepalive:type_name -> conf.v1.Client.Keepalive
+	5,  // 8: conf.v1.Client.Keepalive.time:type_name -> google.protobuf.Duration
+	5,  // 9: conf.v1.Client.Keepalive.timeout:type_name -> google.protobuf.Duration
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_conf_v1_kratos_conf_client_proto_init() }
@@ -368,7 +454,7 @@ func file_conf_v1_kratos_conf_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_v1_kratos_conf_client_proto_rawDesc), len(file_conf_v1_kratos_conf_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

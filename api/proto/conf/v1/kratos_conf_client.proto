@@ -23,6 +23,7 @@ message Client {
     string addr = 3; // 服务地址
     TLS tls = 4; // TLS配置
     int32 max_msg_size = 5; // 最大消息大小（MB）
+    Keepalive keepalive = 6; // 客户端 Keepalive 配置
   }
 
   message TLS {
@@ -31,6 +32,13 @@ message Client {
     string key_file = 3; // 私钥文件
     string ca_file = 4; // CA证书文件
     string server_name = 5; // 服务名，客户端有用
+  }
+
+  message Keepalive {
+    bool enable = 1; // 是否启用客户端 Keepalive
+    google.protobuf.Duration time = 2; // 无读取活动后发送 PING 的间隔
+    google.protobuf.Duration timeout = 3; // PING 无响应后的连接关闭等待时间
+    bool permit_without_stream = 4; // 无活跃 RPC 时是否继续发送 PING
   }
 
 

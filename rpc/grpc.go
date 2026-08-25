@@ -18,6 +18,8 @@ import (
 	"github.com/go-kratos/aegis/ratelimit/bbr"
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware"
@@ -30,12 +32,13 @@ import (
 )
 
 const (
-	defaultTimeout        = 5 * time.Second
-	defaultCaFile         = "pkg/cert/ca/ca.crt"
-	defaultServerCertFile = "pkg/cert/server/server.crt"
-	defaultClientCertFile = "pkg/cert/client/client.crt"
-	defaultServerName     = "localhost"
-	defaultMsgSize        = 16 * 1024 * 1024
+	defaultTimeout             = 5 * time.Second
+	defaultCaFile              = "pkg/cert/ca/ca.crt"
+	defaultServerCertFile      = "pkg/cert/server/server.crt"
+	defaultClientCertFile      = "pkg/cert/client/client.crt"
+	defaultServerName          = "localhost"
+	defaultMsgSize             = 16 * 1024 * 1024
+	minimumClientKeepaliveTime = 10 * time.Second
 )
 
 // CreateGrpcClient 创建GRPC客户端
@@ -111,24 +114,18 @@ func CreateGrpcClient(ctx context.Context, serviceName string, cfg *conf.Bootstr
 
 	ms = append(ms, m...)
 
-	// 配置健康检查，对于K8s环境中的Headless Service很有用
-	healthCheckConfig := `,"healthCheckConfig":{"serviceName":""}`
-
 	opts = append(opts, kratosGrpc.WithEndpoint(endpoint))
 	opts = append(opts, kratosGrpc.WithTimeout(timeout))
 	opts = append(opts, kratosGrpc.WithMiddleware(ms...))
 
-	defaultCallOpts := []grpc.CallOption{
-		grpc.MaxCallRecvMsgSize(msgSize),
-		grpc.MaxCallSendMsgSize(msgSize),
+	grpcDialOpts, err := grpcClientTransportOptions(cfg.Client.Grpc, msgSize)
+	if err != nil {
+		log.Fatalf("invalid gRPC client transport config: %s", err)
+		return nil
 	}
-
-	// 使用round_robin负载均衡策略，适用于K8s Headless Service
-	opts = append(opts, kratosGrpc.WithOptions(
-		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingConfig": [{"%s":{}}]%s}`,
-			"round_robin", healthCheckConfig)),
-		grpc.WithDefaultCallOptions(defaultCallOpts...),
-	))
+	// Kratos WithOptions replaces its raw gRPC option slice, so all transport
+	// options must be supplied together in a single call.
+	opts = append(opts, kratosGrpc.WithOptions(grpcDialOpts...))
 
 	if cfg.Client.Grpc.Tls != nil && cfg.Client.Grpc.Tls.Enable {
 		enableTls = true
@@ -258,9 +255,10 @@ func CreateGrpcServer(cfg *conf.Bootstrap, logger log.Logger, m ...middleware.Mi
 		msgSize = int(cfg.Server.Grpc.MaxMsgSize * 1024 * 1024)
 	}
 
-	grpcServerOpts := []grpc.ServerOption{
-		grpc.MaxRecvMsgSize(msgSize),
-		grpc.MaxSendMsgSize(msgSize),
+	grpcServerOpts, err := grpcServerTransportOptions(cfg.Server.Grpc, msgSize)
+	if err != nil {
+		log.Fatalf("invalid gRPC server transport config: %s", err)
+		return nil
 	}
 	opts = append(opts, kratosGrpc.Options(grpcServerOpts...))
 
@@ -292,6 +290,102 @@ func CreateGrpcServer(cfg *conf.Bootstrap, logger log.Logger, m ...middleware.Mi
 	srv := kratosGrpc.NewServer(opts...)
 
 	return srv
+}
+
+func grpcClientTransportOptions(cfg *conf.Client_GRPC, msgSize int) ([]grpc.DialOption, error) {
+	// 配置健康检查，对于K8s环境中的Headless Service很有用
+	healthCheckConfig := `,"healthCheckConfig":{"serviceName":""}`
+	defaultCallOpts := []grpc.CallOption{
+		grpc.MaxCallRecvMsgSize(msgSize),
+		grpc.MaxCallSendMsgSize(msgSize),
+	}
+	// 使用round_robin负载均衡策略，适用于K8s Headless Service
+	opts := []grpc.DialOption{
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingConfig": [{"%s":{}}]%s}`,
+			"round_robin", healthCheckConfig)),
+		grpc.WithDefaultCallOptions(defaultCallOpts...),
+	}
+
+	params, enabled, err := clientKeepaliveParameters(cfg.GetKeepalive())
+	if err != nil {
+		return nil, err
+	}
+	if enabled {
+		opts = append(opts, grpc.WithKeepaliveParams(params))
+	}
+	return opts, nil
+}
+
+func grpcServerTransportOptions(cfg *conf.Server_GRPC, msgSize int) ([]grpc.ServerOption, error) {
+	opts := []grpc.ServerOption{
+		grpc.MaxRecvMsgSize(msgSize),
+		grpc.MaxSendMsgSize(msgSize),
+	}
+
+	policy, enabled, err := serverKeepaliveEnforcementPolicy(cfg.GetKeepaliveEnforcementPolicy())
+	if err != nil {
+		return nil, err
+	}
+	if enabled {
+		opts = append(opts, grpc.KeepaliveEnforcementPolicy(policy))
+	}
+	return opts, nil
+}
+
+func clientKeepaliveParameters(cfg *conf.Client_Keepalive) (keepalive.ClientParameters, bool, error) {
+	if cfg == nil || !cfg.GetEnable() {
+		return keepalive.ClientParameters{}, false, nil
+	}
+
+	keepaliveTime, err := positiveDuration("client.grpc.keepalive.time", cfg.GetTime())
+	if err != nil {
+		return keepalive.ClientParameters{}, false, err
+	}
+	if keepaliveTime < minimumClientKeepaliveTime {
+		return keepalive.ClientParameters{}, false, fmt.Errorf(
+			"client.grpc.keepalive.time must be at least %s", minimumClientKeepaliveTime,
+		)
+	}
+	keepaliveTimeout, err := positiveDuration("client.grpc.keepalive.timeout", cfg.GetTimeout())
+	if err != nil {
+		return keepalive.ClientParameters{}, false, err
+	}
+
+	return keepalive.ClientParameters{
+		Time:                keepaliveTime,
+		Timeout:             keepaliveTimeout,
+		PermitWithoutStream: cfg.GetPermitWithoutStream(),
+	}, true, nil
+}
+
+func serverKeepaliveEnforcementPolicy(cfg *conf.Server_KeepaliveEnforcementPolicy) (keepalive.EnforcementPolicy, bool, error) {
+	if cfg == nil || !cfg.GetEnable() {
+		return keepalive.EnforcementPolicy{}, false, nil
+	}
+
+	minTime, err := positiveDuration("server.grpc.keepalive_enforcement_policy.min_time", cfg.GetMinTime())
+	if err != nil {
+		return keepalive.EnforcementPolicy{}, false, err
+	}
+
+	return keepalive.EnforcementPolicy{
+		MinTime:             minTime,
+		PermitWithoutStream: cfg.GetPermitWithoutStream(),
+	}, true, nil
+}
+
+func positiveDuration(name string, value *durationpb.Duration) (time.Duration, error) {
+	if value == nil {
+		return 0, fmt.Errorf("%s is required", name)
+	}
+	if err := value.CheckValid(); err != nil {
+		return 0, fmt.Errorf("%s is invalid: %w", name, err)
+	}
+	duration := value.AsDuration()
+	if duration <= 0 {
+		return 0, fmt.Errorf("%s must be greater than zero", name)
+	}
+	return duration, nil
 }
 
 func newTLSConfig(certFile, keyFile, caFile string) (*tls.Config, error) {

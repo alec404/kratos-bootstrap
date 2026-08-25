@@ -178,15 +178,16 @@ func (x *Server_HTTP) GetEnablePprof() bool {
 
 // gPRC
 type Server_GRPC struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Network       string                 `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"` // 网络
-	Addr          string                 `protobuf:"bytes,2,opt,name=addr,proto3" json:"addr,omitempty"`       // 服务监听地址
-	Timeout       *durationpb.Duration   `protobuf:"bytes,3,opt,name=timeout,proto3" json:"timeout,omitempty"` // 超时时间
-	Middleware    *Middleware            `protobuf:"bytes,4,opt,name=middleware,proto3" json:"middleware,omitempty"`
-	Tls           *Server_TLS            `protobuf:"bytes,5,opt,name=tls,proto3" json:"tls,omitempty"`                                    // TLS配置
-	MaxMsgSize    int32                  `protobuf:"varint,6,opt,name=max_msg_size,json=maxMsgSize,proto3" json:"max_msg_size,omitempty"` // 最大消息大小（MB）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState             `protogen:"open.v1"`
+	Network                    string                             `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"` // 网络
+	Addr                       string                             `protobuf:"bytes,2,opt,name=addr,proto3" json:"addr,omitempty"`       // 服务监听地址
+	Timeout                    *durationpb.Duration               `protobuf:"bytes,3,opt,name=timeout,proto3" json:"timeout,omitempty"` // 超时时间
+	Middleware                 *Middleware                        `protobuf:"bytes,4,opt,name=middleware,proto3" json:"middleware,omitempty"`
+	Tls                        *Server_TLS                        `protobuf:"bytes,5,opt,name=tls,proto3" json:"tls,omitempty"`                                                                                   // TLS配置
+	MaxMsgSize                 int32                              `protobuf:"varint,6,opt,name=max_msg_size,json=maxMsgSize,proto3" json:"max_msg_size,omitempty"`                                                // 最大消息大小（MB）
+	KeepaliveEnforcementPolicy *Server_KeepaliveEnforcementPolicy `protobuf:"bytes,7,opt,name=keepalive_enforcement_policy,json=keepaliveEnforcementPolicy,proto3" json:"keepalive_enforcement_policy,omitempty"` // Keepalive 约束策略
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *Server_GRPC) Reset() {
@@ -259,6 +260,13 @@ func (x *Server_GRPC) GetMaxMsgSize() int32 {
 		return x.MaxMsgSize
 	}
 	return 0
+}
+
+func (x *Server_GRPC) GetKeepaliveEnforcementPolicy() *Server_KeepaliveEnforcementPolicy {
+	if x != nil {
+		return x.KeepaliveEnforcementPolicy
+	}
+	return nil
 }
 
 type Server_TLS struct {
@@ -374,6 +382,66 @@ func (x *Server_RabbitMQ) GetEndpoints() []string {
 	return nil
 }
 
+type Server_KeepaliveEnforcementPolicy struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Enable              bool                   `protobuf:"varint,1,opt,name=enable,proto3" json:"enable,omitempty"`                                                        // 是否启用自定义客户端 Keepalive 约束策略
+	MinTime             *durationpb.Duration   `protobuf:"bytes,2,opt,name=min_time,json=minTime,proto3" json:"min_time,omitempty"`                                        // 客户端两次 PING 的最小间隔
+	PermitWithoutStream bool                   `protobuf:"varint,3,opt,name=permit_without_stream,json=permitWithoutStream,proto3" json:"permit_without_stream,omitempty"` // 是否允许客户端在无活跃 RPC 时发送 PING
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Server_KeepaliveEnforcementPolicy) Reset() {
+	*x = Server_KeepaliveEnforcementPolicy{}
+	mi := &file_conf_v1_kratos_conf_server_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Server_KeepaliveEnforcementPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Server_KeepaliveEnforcementPolicy) ProtoMessage() {}
+
+func (x *Server_KeepaliveEnforcementPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_v1_kratos_conf_server_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Server_KeepaliveEnforcementPolicy.ProtoReflect.Descriptor instead.
+func (*Server_KeepaliveEnforcementPolicy) Descriptor() ([]byte, []int) {
+	return file_conf_v1_kratos_conf_server_proto_rawDescGZIP(), []int{0, 4}
+}
+
+func (x *Server_KeepaliveEnforcementPolicy) GetEnable() bool {
+	if x != nil {
+		return x.Enable
+	}
+	return false
+}
+
+func (x *Server_KeepaliveEnforcementPolicy) GetMinTime() *durationpb.Duration {
+	if x != nil {
+		return x.MinTime
+	}
+	return nil
+}
+
+func (x *Server_KeepaliveEnforcementPolicy) GetPermitWithoutStream() bool {
+	if x != nil {
+		return x.PermitWithoutStream
+	}
+	return false
+}
+
 type Server_HTTP_CORS struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Headers       []string               `protobuf:"bytes,1,rep,name=headers,proto3" json:"headers,omitempty"`
@@ -385,7 +453,7 @@ type Server_HTTP_CORS struct {
 
 func (x *Server_HTTP_CORS) Reset() {
 	*x = Server_HTTP_CORS{}
-	mi := &file_conf_v1_kratos_conf_server_proto_msgTypes[5]
+	mi := &file_conf_v1_kratos_conf_server_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -397,7 +465,7 @@ func (x *Server_HTTP_CORS) String() string {
 func (*Server_HTTP_CORS) ProtoMessage() {}
 
 func (x *Server_HTTP_CORS) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_v1_kratos_conf_server_proto_msgTypes[5]
+	mi := &file_conf_v1_kratos_conf_server_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -438,7 +506,7 @@ var File_conf_v1_kratos_conf_server_proto protoreflect.FileDescriptor
 
 const file_conf_v1_kratos_conf_server_proto_rawDesc = "" +
 	"\n" +
-	" conf/v1/kratos_conf_server.proto\x12\aconf.v1\x1a\x1egoogle/protobuf/duration.proto\x1a$conf/v1/kratos_conf_middleware.proto\"\x86\a\n" +
+	" conf/v1/kratos_conf_server.proto\x12\aconf.v1\x1a\x1egoogle/protobuf/duration.proto\x1a$conf/v1/kratos_conf_middleware.proto\"\x95\t\n" +
 	"\x06Server\x12(\n" +
 	"\x04http\x18\x01 \x01(\v2\x14.conf.v1.Server.HTTPR\x04http\x12(\n" +
 	"\x04grpc\x18\x02 \x01(\v2\x14.conf.v1.Server.GRPCR\x04grpc\x124\n" +
@@ -457,7 +525,7 @@ const file_conf_v1_kratos_conf_server_proto_rawDesc = "" +
 	"\x04CORS\x12\x18\n" +
 	"\aheaders\x18\x01 \x03(\tR\aheaders\x12\x18\n" +
 	"\amethods\x18\x02 \x03(\tR\amethods\x12\x18\n" +
-	"\aorigins\x18\x03 \x03(\tR\aorigins\x1a\xe7\x01\n" +
+	"\aorigins\x18\x03 \x03(\tR\aorigins\x1a\xd5\x02\n" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
@@ -467,14 +535,19 @@ const file_conf_v1_kratos_conf_server_proto_rawDesc = "" +
 	"middleware\x12%\n" +
 	"\x03tls\x18\x05 \x01(\v2\x13.conf.v1.Server.TLSR\x03tls\x12 \n" +
 	"\fmax_msg_size\x18\x06 \x01(\x05R\n" +
-	"maxMsgSize\x1an\n" +
+	"maxMsgSize\x12l\n" +
+	"\x1ckeepalive_enforcement_policy\x18\a \x01(\v2*.conf.v1.Server.KeepaliveEnforcementPolicyR\x1akeepaliveEnforcementPolicy\x1an\n" +
 	"\x03TLS\x12\x16\n" +
 	"\x06enable\x18\x01 \x01(\bR\x06enable\x12\x1b\n" +
 	"\tcert_file\x18\x02 \x01(\tR\bcertFile\x12\x19\n" +
 	"\bkey_file\x18\x03 \x01(\tR\akeyFile\x12\x17\n" +
 	"\aca_file\x18\x04 \x01(\tR\x06caFile\x1a(\n" +
 	"\bRabbitMQ\x12\x1c\n" +
-	"\tendpoints\x18\x01 \x03(\tR\tendpointsB?Z=github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1b\x06proto3"
+	"\tendpoints\x18\x01 \x03(\tR\tendpoints\x1a\x9e\x01\n" +
+	"\x1aKeepaliveEnforcementPolicy\x12\x16\n" +
+	"\x06enable\x18\x01 \x01(\bR\x06enable\x124\n" +
+	"\bmin_time\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\aminTime\x122\n" +
+	"\x15permit_without_stream\x18\x03 \x01(\bR\x13permitWithoutStreamB?Z=github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1b\x06proto3"
 
 var (
 	file_conf_v1_kratos_conf_server_proto_rawDescOnce sync.Once
@@ -488,32 +561,35 @@ func file_conf_v1_kratos_conf_server_proto_rawDescGZIP() []byte {
 	return file_conf_v1_kratos_conf_server_proto_rawDescData
 }
 
-var file_conf_v1_kratos_conf_server_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_conf_v1_kratos_conf_server_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_conf_v1_kratos_conf_server_proto_goTypes = []any{
-	(*Server)(nil),              // 0: conf.v1.Server
-	(*Server_HTTP)(nil),         // 1: conf.v1.Server.HTTP
-	(*Server_GRPC)(nil),         // 2: conf.v1.Server.GRPC
-	(*Server_TLS)(nil),          // 3: conf.v1.Server.TLS
-	(*Server_RabbitMQ)(nil),     // 4: conf.v1.Server.RabbitMQ
-	(*Server_HTTP_CORS)(nil),    // 5: conf.v1.Server.HTTP.CORS
-	(*durationpb.Duration)(nil), // 6: google.protobuf.Duration
-	(*Middleware)(nil),          // 7: conf.v1.Middleware
+	(*Server)(nil),                            // 0: conf.v1.Server
+	(*Server_HTTP)(nil),                       // 1: conf.v1.Server.HTTP
+	(*Server_GRPC)(nil),                       // 2: conf.v1.Server.GRPC
+	(*Server_TLS)(nil),                        // 3: conf.v1.Server.TLS
+	(*Server_RabbitMQ)(nil),                   // 4: conf.v1.Server.RabbitMQ
+	(*Server_KeepaliveEnforcementPolicy)(nil), // 5: conf.v1.Server.KeepaliveEnforcementPolicy
+	(*Server_HTTP_CORS)(nil),                  // 6: conf.v1.Server.HTTP.CORS
+	(*durationpb.Duration)(nil),               // 7: google.protobuf.Duration
+	(*Middleware)(nil),                        // 8: conf.v1.Middleware
 }
 var file_conf_v1_kratos_conf_server_proto_depIdxs = []int32{
-	1, // 0: conf.v1.Server.http:type_name -> conf.v1.Server.HTTP
-	2, // 1: conf.v1.Server.grpc:type_name -> conf.v1.Server.GRPC
-	4, // 2: conf.v1.Server.rabbitmq:type_name -> conf.v1.Server.RabbitMQ
-	6, // 3: conf.v1.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	5, // 4: conf.v1.Server.HTTP.cors:type_name -> conf.v1.Server.HTTP.CORS
-	7, // 5: conf.v1.Server.HTTP.middleware:type_name -> conf.v1.Middleware
-	6, // 6: conf.v1.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	7, // 7: conf.v1.Server.GRPC.middleware:type_name -> conf.v1.Middleware
-	3, // 8: conf.v1.Server.GRPC.tls:type_name -> conf.v1.Server.TLS
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	1,  // 0: conf.v1.Server.http:type_name -> conf.v1.Server.HTTP
+	2,  // 1: conf.v1.Server.grpc:type_name -> conf.v1.Server.GRPC
+	4,  // 2: conf.v1.Server.rabbitmq:type_name -> conf.v1.Server.RabbitMQ
+	7,  // 3: conf.v1.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	6,  // 4: conf.v1.Server.HTTP.cors:type_name -> conf.v1.Server.HTTP.CORS
+	8,  // 5: conf.v1.Server.HTTP.middleware:type_name -> conf.v1.Middleware
+	7,  // 6: conf.v1.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	8,  // 7: conf.v1.Server.GRPC.middleware:type_name -> conf.v1.Middleware
+	3,  // 8: conf.v1.Server.GRPC.tls:type_name -> conf.v1.Server.TLS
+	5,  // 9: conf.v1.Server.GRPC.keepalive_enforcement_policy:type_name -> conf.v1.Server.KeepaliveEnforcementPolicy
+	7,  // 10: conf.v1.Server.KeepaliveEnforcementPolicy.min_time:type_name -> google.protobuf.Duration
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_conf_v1_kratos_conf_server_proto_init() }
@@ -528,7 +604,7 @@ func file_conf_v1_kratos_conf_server_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_v1_kratos_conf_server_proto_rawDesc), len(file_conf_v1_kratos_conf_server_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -187,6 +187,33 @@ grpcServer := rpc.CreateGrpcServer(cfg, logger)
 
 客户端和服务端的最大消息大小可通过 `max_msg_size` 配置，单位为 MB。
 
+## gRPC Keepalive
+
+bootstrap 默认不注入客户端 Keepalive 和自定义服务端 EnforcementPolicy；配置缺失或 `enable: false` 时保持 grpc-go 原有行为（客户端 Keepalive 关闭，服务端沿用默认的 `MinTime=5m`、`PermitWithoutStream=false`）。该能力适用于 K8s Headless Service 等需要主动识别网络黑洞连接的场景：
+
+```yaml
+client:
+  grpc:
+    keepalive:
+      enable: true
+      time: 60s
+      timeout: 10s
+      permit_without_stream: true
+
+server:
+  grpc:
+    keepalive_enforcement_policy:
+      enable: true
+      min_time: 30s
+      permit_without_stream: true
+```
+
+启用客户端 Keepalive 时，`time` 和 `timeout` 必须为正数，且 `time` 不能小于 grpc-go 的 10 秒最小值；服务端 `min_time` 也必须为正数。非法配置会在创建 gRPC client/server 时导致启动失败，不会静默回退。
+
+客户端配置必须与服务端策略协同：客户端 `time` 不应小于服务端 `min_time`，并且当客户端允许无活跃 RPC 发送 PING 时，服务端也必须允许。发布时应先确保全部服务端实例已经启用兼容的 EnforcementPolicy，再启用客户端；回滚顺序相反。
+
+在 Linux 上，grpc-go 启用客户端 Keepalive 后还会把连接的 `TCP_USER_TIMEOUT` 设置为这里的 `timeout`。上述值只是 Headless Service 的起始示例，不是库的硬编码默认值，应结合网络延迟和连接规模灰度调整。
+
 ## 配置结构
 
 根配置消息是 `conf.Bootstrap`：

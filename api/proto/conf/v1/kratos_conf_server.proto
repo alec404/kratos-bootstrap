@@ -34,6 +34,7 @@ message Server {
     Middleware middleware = 4;
     TLS tls = 5; // TLS配置
     int32 max_msg_size = 6; // 最大消息大小（MB）
+    KeepaliveEnforcementPolicy keepalive_enforcement_policy = 7; // Keepalive 约束策略
   }
 
   message TLS {
@@ -46,6 +47,12 @@ message Server {
   // RabbitMQ
   message RabbitMQ {
     repeated string endpoints = 1; // 对端网络地址
+  }
+
+  message KeepaliveEnforcementPolicy {
+    bool enable = 1; // 是否启用自定义客户端 Keepalive 约束策略
+    google.protobuf.Duration min_time = 2; // 客户端两次 PING 的最小间隔
+    bool permit_without_stream = 3; // 是否允许客户端在无活跃 RPC 时发送 PING
   }
 
   // RPC
