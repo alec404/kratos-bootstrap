@@ -84,3 +84,27 @@ client:
 		t.Fatal("server keepalive enforcement policy should permit pings without streams")
 	}
 }
+
+func TestLoadBootstrapConfigReturnsFreshConfig(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "transport.yaml")
+	if err := os.WriteFile(configPath, []byte("server:\n  http:\n    addr: 127.0.0.1:8080\n"), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	first, err := LoadBootstrapConfig(configPath)
+	if err != nil {
+		t.Fatalf("load first bootstrap config: %v", err)
+	}
+	first.Server.Http.Addr = "changed"
+
+	second, err := LoadBootstrapConfig(configPath)
+	if err != nil {
+		t.Fatalf("load second bootstrap config: %v", err)
+	}
+	if first == second {
+		t.Fatal("LoadBootstrapConfig returned a shared Bootstrap instance")
+	}
+	if got := second.GetServer().GetHttp().GetAddr(); got != "127.0.0.1:8080" {
+		t.Fatalf("second HTTP addr = %q, want %q", got, "127.0.0.1:8080")
+	}
+}

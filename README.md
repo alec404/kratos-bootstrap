@@ -33,7 +33,8 @@ go get github.com/alec404/kratos-bootstrap/data/ent
 ```text
 api/                  protobuf 配置定义和生成后的 Go 类型
 bootstrap.go          应用启动辅助方法
-config/               配置加载和服务元信息
+context.go            启动 Context、自定义配置注册和 Wire providers
+config/               配置加载和应用信息处理
 logger/               Kratos logger provider
 metrics/              OpenTelemetry metrics 初始化
 rpc/                  HTTP/gRPC Server 和 Client 辅助方法
@@ -60,30 +61,76 @@ make api
 package main
 
 import (
+	appv1 "example.com/project/api/gen/go/app/v1"
 	"github.com/alec404/kratos-bootstrap"
-	conf "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1"
-	"github.com/alec404/kratos-bootstrap/config"
+	confv1 "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1"
 	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
-type CustomConfig struct{}
+func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
+	logger := bootstrap.LoggerFromContext(ctx)
+	cfg := bootstrap.ConfigFromContext(ctx)
+	appConfig, err := bootstrap.GetCustomConfig[*appv1.AppConfig](ctx, "app")
+	if err != nil {
+		return nil, nil, err
+	}
+	_, _, _ = logger, cfg, appConfig
 
-func initApp(logger log.Logger, cfg *conf.Bootstrap, custom *CustomConfig) (*kratos.App, func(), error) {
-	app := bootstrap.NewApp(logger)
+	app := bootstrap.NewApp(ctx)
 	return app, func() {}, nil
 }
 
 func main() {
-	serviceName := "example-service"
-	version := "v0.1.0"
-
-	bootstrap.Service = config.NewServiceInfo(serviceName, version, "")
-	bootstrap.Bootstrap(initApp, &serviceName, &version, &CustomConfig{})
+	ctx := bootstrap.NewContext(&confv1.AppInfo{
+		Project:   "example",
+		AppId: "service",
+		Version:   "v0.1.0",
+	})
+	ctx.RegisterCustomConfig("app", &appv1.AppConfig{})
+	ctx.Run(initApp)
 }
 ```
 
 实际项目通常会在 `initApp` 中创建 HTTP/gRPC server，然后传给 `bootstrap.NewApp`。
+
+自定义配置必须是生成的 Proto message，可以通过多个不同 key 同时注册：
+
+```go
+ctx := bootstrap.NewContext(&confv1.AppInfo{
+	Project:   "example",
+	AppId: "service",
+	Version:   "v0.1.0",
+})
+ctx.RegisterCustomConfig("app", &appv1.AppConfig{})
+ctx.RegisterCustomConfig("worker", &appv1.WorkerConfig{})
+ctx.Run(initApp)
+```
+
+`AppInfo` 是由 `api/proto/conf/v1/app_info.proto` 生成的应用身份模型，调用方直接使用 `confv1.AppInfo`。`Project` 表示项目，Proto 字段 `app_id`（Go 字段 `AppId`）表示项目内可独立部署的应用，`service_name`（Go 字段 `ServiceName`）为空时自动设置为 `<project>-<app_id>`（`config.ServiceName(appInfo)` 也会优先读取该值）；`Hostname` 为空时按 `POD_NAME`、`HOSTNAME`、操作系统 hostname 的顺序解析。`InstanceId` 为空且 `AppId` 有效时默认使用 `Hostname`；如果调用方需要其他实例标识，也可以显式设置 `InstanceId`。`Version` 为空时使用 `1.0.0`，`Metadata` 会被深拷贝并初始化。`Context` 是启动阶段的 facade 和只读依赖载体，不是请求链路中的 `context.Context`。`Run` 会先用标准输出记录一次应用身份，再加载配置并初始化 Logger，随后把这些依赖绑定到 Context 后调用 `initApp(ctx)`；即使配置加载失败，也能看到这条启动诊断信息。每个自定义配置 target 必须是非 nil 的 Proto message，同一次启动中的 key 不能重复，且只能在 `Run` 前注册；非法注册会立即 panic。Context 会把本次启动注册的 targets 显式交给配置加载器，不使用进程级全局 registry。
+
+当 `AppInfo` 包含非空 `AppId` 时，Logger 才追加 `service.name`、`service.version` 和 `service.instance.id` 三个身份字段，并直接附加 Kratos 的 `trace_id` 和 `span_id` Valuer。Tracer 和 Metrics 的资源直接写入 OpenTelemetry 的 `service.namespace`（对应 `Project`）、`service.name`（对应 `ServiceName`）、`service.instance.id` 和环境属性；Tracer 还写入 `service.version`，Metrics 使用 `deployment.environment`。Kratos 应用的 `Name` 和 `ID` 选项分别使用派生服务名与 `InstanceId`。
+
+使用 Wire 时，将 `*bootstrap.Context` 作为 injector 的唯一根参数，并只在 composition root 通过以下 provider 函数提取显式依赖：
+
+```go
+var bootstrapProviderSet = wire.NewSet(
+	bootstrap.AppInfoFromContext,
+	bootstrap.LoggerFromContext,
+	bootstrap.ConfigFromContext,
+)
+
+func initApp(*bootstrap.Context) (*kratos.App, func(), error) {
+	panic(wire.Build(bootstrapProviderSet, server.ProviderSet, data.ProviderSet, newApp))
+}
+```
+
+具体业务配置继续由 composition root 从 registry 提取，业务构造函数不要直接依赖 `*bootstrap.Context`：
+
+```go
+func provideAppConfig(ctx *bootstrap.Context) (*appv1.AppConfig, error) {
+	return bootstrap.GetCustomConfig[*appv1.AppConfig](ctx, "app")
+}
+```
 
 ## 应用停止前等待
 
@@ -97,7 +144,7 @@ const DefaultBeforeStopDelay = 0
 
 ```go
 app := bootstrap.NewAppWithOptions(
-	logger,
+	ctx,
 	[]transport.Server{httpServer, grpcServer},
 	bootstrap.WithBeforeStopDelay(10*time.Second),
 )
@@ -106,7 +153,7 @@ app := bootstrap.NewAppWithOptions(
 如需保持默认不等待，可以继续使用：
 
 ```go
-app := bootstrap.NewApp(logger, httpServer)
+app := bootstrap.NewApp(ctx, httpServer)
 ```
 
 显式配置正数等待时间后，等待逻辑会使用 `time.Sleep`，确保进程在配置的 drain window 内持续等待。
@@ -266,6 +313,8 @@ zap 日志支持控制台输出、文件输出、错误文件输出、日志级�
 - `otlp-http`
 
 不直接支持 `jaeger` exporter；如需接入 Jaeger，建议通过 OTLP Collector 转发。
+
+`trace` 配置块可以省略；省略时跳过 tracer 初始化，不影响应用启动。
 
 ## Metrics
 

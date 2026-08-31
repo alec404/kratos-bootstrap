@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package conf.v1;
+
+option go_package = "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1;confv1";
+
+// AppInfo 描述应用及其运行实例的身份信息。
+message AppInfo {
+  // 项目标识，例如 kratos-layout。
+  string project = 1;
+  // 项目内可独立部署应用的逻辑标识，例如 core、admin。
+  string app_id = 2;
+  // 当前运行实例的唯一标识。
+  string instance_id = 3;
+  // 完整服务名称；未设置时由 project 和 app_id 以连字符拼接得到。
+  string service_name = 4;
+  // 应用版本。
+  string version = 5;
+
+  // 当前运行实例所在主机或 Pod 的名称。
+  string hostname = 10;
+
+  // 供服务注册及观测系统使用的扩展元数据。
+  map<string, string> metadata = 40;
+}

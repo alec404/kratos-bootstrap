@@ -3,7 +3,6 @@ package tracer
 import (
 	"context"
 	"errors"
-	"github.com/alec404/kratos-bootstrap/config"
 	"os"
 
 	"go.opentelemetry.io/otel"
@@ -14,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/sdk/resource"
 	traceSdk "go.opentelemetry.io/otel/sdk/trace"
-	semConv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semConv "go.opentelemetry.io/otel/semconv/v1.20.0"
 
 	conf "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1"
 )
@@ -38,33 +37,37 @@ func NewTracerExporter(exporterName, endpoint string, insecure bool) (traceSdk.S
 }
 
 // NewTracerProvider 创建一个链路追踪器
-func NewTracerProvider(cfg *conf.Tracer, serviceInfo *config.ServiceInfo) error {
-	if cfg == nil {
-		return errors.New("tracer config is nil")
+func NewTracerProvider(cfg *conf.Tracer, appInfo *conf.AppInfo) error {
+	// tracing 是可选能力。未配置 trace，或应用身份尚未准备好时，
+	// 保持 OpenTelemetry 当前的全局 provider，不阻断应用启动。
+	if cfg == nil || appInfo == nil {
+		return nil
 	}
 
 	if cfg.Sampler < 0 {
 		return nil
 	}
 
-	if cfg.Env == "" {
-		cfg.Env = os.Getenv("GO_ENV")
+	env := cfg.GetEnv()
+	if env == "" {
+		env = os.Getenv("GO_ENV")
 	}
 
 	opts := []traceSdk.TracerProviderOption{
 		traceSdk.WithSampler(traceSdk.ParentBased(traceSdk.TraceIDRatioBased(cfg.GetSampler()))),
 		traceSdk.WithResource(resource.NewSchemaless(
-			semConv.ServiceNameKey.String(serviceInfo.Name),
-			semConv.ServiceVersionKey.String(serviceInfo.Version),
-			semConv.ServiceInstanceIDKey.String(serviceInfo.Id),
-			attribute.String("env", cfg.GetEnv()),
+			semConv.ServiceNamespaceKey.String(appInfo.GetProject()),
+			semConv.ServiceNameKey.String(appInfo.GetServiceName()),
+			semConv.ServiceVersionKey.String(appInfo.GetVersion()),
+			semConv.ServiceInstanceIDKey.String(appInfo.GetInstanceId()),
+			attribute.String("env", env),
 		)),
 	}
 
 	if len(cfg.GetEndpoint()) > 0 {
 		exp, err := NewTracerExporter(cfg.GetBatcher(), cfg.GetEndpoint(), cfg.GetInsecure())
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		opts = append(opts, traceSdk.WithBatcher(exp))

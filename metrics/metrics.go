@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	conf "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1"
-	"github.com/alec404/kratos-bootstrap/config"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/host"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
@@ -26,18 +25,18 @@ var (
 )
 
 // NewMetricProvider 创建 Metrics Provider（主入口，与 tracer 保持一致）
-func NewMetricProvider(cfg *conf.Metrics, serviceInfo *config.ServiceInfo) error {
+func NewMetricProvider(cfg *conf.Metrics, appInfo *conf.AppInfo) error {
 	if cfg == nil {
 		// 如果配置为空，使用默认配置
-		return Init(serviceInfo)
+		return Init(appInfo)
 	}
 
-	config := NewConfigFromProto(cfg)
-	return InitWithConfig(serviceInfo, config)
+	metricConfig := NewConfigFromProto(cfg)
+	return InitWithConfig(appInfo, metricConfig)
 }
 
 // Init 初始化 Metrics，使用默认配置
-func Init(serviceInfo *config.ServiceInfo, opts ...Option) error {
+func Init(appInfo *conf.AppInfo, opts ...Option) error {
 	cfg := DefaultConfig()
 	for _, opt := range opts {
 		opt(cfg)
@@ -48,38 +47,39 @@ func Init(serviceInfo *config.ServiceInfo, opts ...Option) error {
 		return fmt.Errorf("invalid metrics config: %w", err)
 	}
 
-	return InitWithConfig(serviceInfo, cfg)
+	return InitWithConfig(appInfo, cfg)
 }
 
 // InitWithConfig 使用自定义配置初始化 Metrics
-func InitWithConfig(serviceInfo *config.ServiceInfo, cfg *Config) error {
+func InitWithConfig(appInfo *conf.AppInfo, cfg *Config) error {
 	// 验证配置
 	if err := ValidateConfig(cfg); err != nil {
 		return fmt.Errorf("invalid metrics config: %w", err)
 	}
 
 	initOnce.Do(func() {
-		initErr = setupMetricProvider(serviceInfo, cfg)
+		initErr = setupMetricProvider(appInfo, cfg)
 		initialized = initErr == nil
 	})
 	return initErr
 }
 
-func setupMetricProvider(serviceInfo *config.ServiceInfo, cfg *Config) error {
+func setupMetricProvider(appInfo *conf.AppInfo, cfg *Config) error {
 	// 1. 创建 Readers（根据配置启用 Prometheus/OTLP）
 	readers, err := NewMetricReaders(cfg.Exporters, cfg.Endpoint, cfg.Interval, cfg.Insecure)
 	if err != nil {
 		return fmt.Errorf("create metric readers: %w", err)
 	}
 
-	// 2. 资源标签（service/env/instance）
+	// 2. 资源标签（namespace/service/env/instance）
 	res, err := resource.New(
 		context.Background(),
 		resource.WithFromEnv(),
 		resource.WithHost(),
 		resource.WithAttributes(
-			semConv.ServiceName(serviceInfo.Name),
-			semConv.ServiceInstanceID(serviceInfo.Id),
+			semConv.ServiceNamespaceKey.String(appInfo.GetProject()),
+			semConv.ServiceName(appInfo.GetServiceName()),
+			semConv.ServiceInstanceID(appInfo.GetInstanceId()),
 			semConv.DeploymentEnvironment(cfg.Env),
 		),
 	)

@@ -1,8 +1,9 @@
 package logger
 
 import (
-	"go.uber.org/zap/zapcore"
 	"os"
+
+	"go.uber.org/zap/zapcore"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
@@ -69,20 +70,36 @@ func NewLogger(cfg *conf.Logger) log.Logger {
 	}
 }
 
-// NewLoggerProvider 创建一个新的日志记录器提供者
-func NewLoggerProvider(cfg *conf.Logger, serviceInfo *config.ServiceInfo) log.Logger {
+// NewLoggerProvider 创建一个新的日志记录器提供者。
+// 仅当 AppInfo 包含有效的 AppId 时追加应用身份字段。
+func NewLoggerProvider(cfg *conf.Logger, appInfo *conf.AppInfo) log.Logger {
 	l := NewLogger(cfg)
-
-	return log.With(
-		l,
-		"service.id", serviceInfo.Id,
-		"service.name", serviceInfo.Name,
-		"service.version", serviceInfo.Version,
+	fields := []any{
 		"ts", log.DefaultTimestamp,
 		"caller", log.DefaultCaller,
+	}
+
+	if config.IsValidAppInfo(appInfo) {
+		identityFields := make([]any, 0, 6)
+		identityFields = appendStringField(identityFields, "service.name", config.ServiceName(appInfo))
+		identityFields = appendStringField(identityFields, "service.version", appInfo.GetVersion())
+		identityFields = appendStringField(identityFields, "service.instance.id", appInfo.GetInstanceId())
+		fields = append(identityFields, fields...)
+	}
+
+	fields = append(fields,
 		"trace_id", tracing.TraceID(),
 		"span_id", tracing.SpanID(),
 	)
+
+	return log.With(l, fields...)
+}
+
+func appendStringField(fields []any, key, value string) []any {
+	if value == "" {
+		return fields
+	}
+	return append(fields, key, value)
 }
 
 // NewStdLogger 创建一个新的日志记录器 - Kratos内置，控制台输出

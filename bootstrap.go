@@ -14,14 +14,7 @@ import (
 	"github.com/alec404/kratos-bootstrap/logger"
 	"github.com/alec404/kratos-bootstrap/metrics"
 	"github.com/alec404/kratos-bootstrap/tracer"
-)
-
-var (
-	Service = config.NewServiceInfo(
-		"",
-		"1.0.0",
-		"",
-	)
+	"google.golang.org/protobuf/proto"
 )
 
 const DefaultBeforeStopDelay time.Duration = 0
@@ -55,24 +48,34 @@ func WithBeforeStopDelay(delay time.Duration) AppOption {
 	}
 }
 
-// NewApp 创建应用程序
-func NewApp(ll log.Logger, srv ...transport.Server) *kratos.App {
-	return NewAppWithOptions(ll, srv)
+// NewApp 使用启动 Context 创建应用程序。
+func NewApp(ctx *Context, srv ...transport.Server) *kratos.App {
+	return NewAppWithOptions(ctx, srv)
 }
 
 // NewAppWithOptions 创建应用程序，并允许调用方覆盖应用级选项。
-func NewAppWithOptions(ll log.Logger, srv []transport.Server, opts ...AppOption) *kratos.App {
+func NewAppWithOptions(ctx *Context, srv []transport.Server, opts ...AppOption) *kratos.App {
+	if ctx == nil {
+		panic("bootstrap context is nil")
+	}
+
+	ll := LoggerFromContext(ctx)
 	if ll == nil {
 		ll = log.DefaultLogger
 	}
+	appInfo := AppInfoFromContext(ctx)
+	if appInfo == nil {
+		panic("bootstrap app info is nil")
+	}
+
 	o := newAppOptions(opts...)
 	helper := log.NewHelper(ll)
 
 	kratosOpts := []kratos.Option{
-		kratos.ID(Service.GetInstanceId()),
-		kratos.Name(Service.Name),
-		kratos.Version(Service.Version),
-		kratos.Metadata(Service.Metadata),
+		kratos.ID(appInfo.GetInstanceId()),
+		kratos.Name(config.ServiceName(appInfo)),
+		kratos.Version(appInfo.GetVersion()),
+		kratos.Metadata(appInfo.GetMetadata()),
 		kratos.Logger(ll),
 	}
 
@@ -94,7 +97,7 @@ func NewAppWithOptions(ll log.Logger, srv []transport.Server, opts ...AppOption)
 }
 
 // DoBootstrap 执行引导
-func DoBootstrap(serviceInfo *config.ServiceInfo) (*conf.Bootstrap, log.Logger) {
+func DoBootstrap(appInfo *conf.AppInfo, customConfigs ...proto.Message) (*conf.Bootstrap, log.Logger) {
 	// inject command flags
 	Flags := config.NewCommandFlags()
 	Flags.Init()
@@ -102,53 +105,50 @@ func DoBootstrap(serviceInfo *config.ServiceInfo) (*conf.Bootstrap, log.Logger) 
 	var err error
 
 	// load configs
-	if err = config.LoadBootstrapConfig(Flags.Conf); err != nil {
+	bootstrapConfig, err := config.LoadBootstrapConfig(Flags.Conf, customConfigs...)
+	if err != nil {
 		panic(fmt.Sprintf("load config failed: %v", err))
 	}
 
 	// init logger
-	ll := logger.NewLoggerProvider(config.GetBootstrapConfig().Logger, serviceInfo)
+	ll := logger.NewLoggerProvider(bootstrapConfig.Logger, appInfo)
 
 	// init tracer
-	if err = tracer.NewTracerProvider(config.GetBootstrapConfig().Trace, serviceInfo); err != nil {
+	if err = tracer.NewTracerProvider(bootstrapConfig.Trace, appInfo); err != nil {
 		panic(fmt.Sprintf("init tracer failed: %v", err))
 	}
 
 	// init metrics
-	if err = metrics.NewMetricProvider(config.GetBootstrapConfig().Metrics, serviceInfo); err != nil {
+	if err = metrics.NewMetricProvider(bootstrapConfig.Metrics, appInfo); err != nil {
 		panic(fmt.Sprintf("init metrics failed: %v", err))
 	}
 
-	return config.GetBootstrapConfig(), ll
+	return bootstrapConfig, ll
 }
 
 type InitApp[T any] func(logger log.Logger, bootstrap *conf.Bootstrap, customCfg *T) (*kratos.App, func(), error)
 
-// Bootstrap 应用引导启动
-func Bootstrap[T any](initApp InitApp[T], serviceName, version *string, customCfg *T) {
-	if serviceName != nil && len(*serviceName) != 0 {
-		Service.Name = *serviceName
+// Bootstrap 应用引导启动。
+//
+// Deprecated: 使用 NewContext、RegisterCustomConfig 和 Context.Run。
+func Bootstrap[T any](initApp InitApp[T], appID, version *string, customCfg *T) {
+	info := &conf.AppInfo{}
+	if appID != nil && len(*appID) != 0 {
+		info.AppId = *appID
 	}
 	if version != nil && len(*version) != 0 {
-		Service.Version = *version
+		info.Version = *version
 	}
 
+	ctx := NewContext(info)
 	if customCfg != nil {
-		config.RegisterConfig(customCfg)
+		customConfig, ok := any(customCfg).(proto.Message)
+		if !ok {
+			panic(fmt.Sprintf("custom config %T must implement proto.Message", customCfg))
+		}
+		ctx.RegisterCustomConfig("custom", customConfig)
 	}
-
-	// bootstrap
-	cfg, ll := DoBootstrap(Service)
-
-	// init app
-	app, cleanup, err := initApp(ll, cfg, customCfg)
-	if err != nil {
-		panic(err)
-	}
-	defer cleanup()
-
-	// run the app.
-	if err = app.Run(); err != nil {
-		panic(err)
-	}
+	ctx.Run(func(ctx *Context) (*kratos.App, func(), error) {
+		return initApp(LoggerFromContext(ctx), ConfigFromContext(ctx), customCfg)
+	})
 }

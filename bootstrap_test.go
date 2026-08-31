@@ -5,44 +5,40 @@ import (
 	"time"
 
 	conf "github.com/alec404/kratos-bootstrap/api/gen/go/conf/v1"
-	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 )
 
-type CustomConfig struct {
-	Cfg string `protobuf:"bytes,1,opt,name=cfg,proto3" json:"cfg,omitempty"`
-}
-
-func initApp(logger log.Logger, _ *conf.Bootstrap, _ *CustomConfig) (*kratos.App, func(), error) {
-	app := NewApp(logger)
-	return app, func() {
-	}, nil
-}
-
 func TestNewApp(t *testing.T) {
-	serviceName := "test"
-	version := "v0.0.1"
-	oldService := Service
-	Service = Service.Clone()
-	t.Cleanup(func() {
-		Service = oldService
+	ctx := NewContext(&conf.AppInfo{
+		Project:    "example",
+		AppId:      "worker",
+		Version:    "v0.0.1",
+		Hostname:   "pod-1",
+		InstanceId: "instance-1",
+		Metadata:   map[string]string{"zone": "cn"},
 	})
+	ctx.logger = log.DefaultLogger
 
-	Service.SetName(serviceName)
-	Service.SetVersion(version)
-	app, cleanup, err := initApp(log.DefaultLogger, &conf.Bootstrap{}, &CustomConfig{})
-	if err != nil {
-		t.Fatalf("init app: %v", err)
+	app := NewApp(ctx)
+	if got := app.Name(); got != "example-worker" {
+		t.Fatalf("unexpected app name: got %q, want %q", got, "example-worker")
 	}
-	if app == nil {
-		t.Fatal("app is nil")
+	if got := app.ID(); got != "instance-1" {
+		t.Fatalf("unexpected app ID: got %q, want %q", got, "instance-1")
 	}
-	cleanup()
+	if got := app.Version(); got != "v0.0.1" {
+		t.Fatalf("unexpected app version: got %q, want %q", got, "v0.0.1")
+	}
+	if got := app.Metadata()["zone"]; got != "cn" {
+		t.Fatalf("unexpected app metadata: got %q, want %q", got, "cn")
+	}
 }
 
 func TestNewAppWithOptions(t *testing.T) {
+	ctx := NewContext(&conf.AppInfo{Project: "example", AppId: "worker", Hostname: "pod-1"})
+	ctx.logger = log.DefaultLogger
 	app := NewAppWithOptions(
-		log.DefaultLogger,
+		ctx,
 		nil,
 		WithBeforeStopDelay(0),
 	)
